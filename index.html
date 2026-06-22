@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CRAZY E-SPROTS Admin</title>
+<title>CrazyFire Admin</title>
 <style>
 :root{
   --bg:#0a0d12;--panel:#12171f;--card:#171d27;--line:#262e3a;
@@ -87,7 +87,7 @@ hr{border:none;border-top:1px solid var(--line);margin:14px 0}
 <!-- LOGIN -->
 <div class="login" id="login">
   <div class="box">
-    <h1>🔥 CRAZY E-SPROTS Admin</h1>
+    <h1>🔥 CrazyFire Admin</h1>
     <p>Sign in with admin account</p>
     <input class="fld" id="aEmail" type="email" placeholder="Admin email">
     <input class="fld" id="aPass" type="password" placeholder="Password">
@@ -789,9 +789,9 @@ function renderSettings(){
     const v=s.val()||{}; window._set=v;
     $('p-settings').innerHTML=`
       <div class="card"><h3>🎨 Branding</h3>
-        <label class="lab">App name</label><input class="fld" id="setName" value="${esc(v.appName||'CRAZY E-SPROTS')}">
+        <label class="lab">App name</label><input class="fld" id="setName" value="${esc(v.appName||'CrazyFire')}">
         <label class="lab">App logo</label>${imgInput('setLogo')}
-        <label class="lab">Welcome message</label><input class="fld" id="setWelcome" value="${esc(v.welcomeMsg||'Welcome to CRAZY E-SPROTS')}">
+        <label class="lab">Welcome message</label><input class="fld" id="setWelcome" value="${esc(v.welcomeMsg||'Welcome to CrazyFire')}">
       </div>
       <div class="card"><h3>💵 Payments & Rebate</h3>
         <div class="grid2">
