@@ -322,7 +322,9 @@ function loadTours(){
         <div class="acts">
           <button class="btn grey sm" onclick='tourForm("${gid}",${JSON.stringify(t).replace(/'/g,"&#39;")})'>Edit</button>
           <button class="btn blue sm" onclick="setStatus('${gid}','${t.id}','ongoing')">Set Ongoing</button>
+          <button class="btn blue sm" onclick="addTime('${gid}','${t.id}',15)">+15 min</button>
           <button class="btn gold sm" onclick="resultForm('${gid}','${t.id}',${JSON.stringify(t.slotsTaken||{}).replace(/'/g,"&#39;")})">Declare Result</button>
+          <button class="btn red sm" onclick="cancelTour('${gid}','${t.id}')">Cancel</button>
           <button class="btn red sm" onclick="delNode('tournaments/${gid}/${t.id}','Tournament')">Delete</button>
         </div>
       </div>`;
@@ -330,6 +332,40 @@ function loadTours(){
   });
 }
 function setStatus(gid,id,st){db.ref('tournaments/'+gid+'/'+id+'/status').set(st);toast('Status: '+st);}
+async function addTime(gid,id,mins){
+  const m=prompt('Kitne minutes add karne hain?',mins||15); if(m===null)return;
+  const add=(+m||0)*60000; if(!add)return;
+  const t=(await db.ref('tournaments/'+gid+'/'+id).once('value')).val()||{};
+  const ns=(t.startAt||Date.now())+add;
+  await db.ref('tournaments/'+gid+'/'+id+'/startAt').set(ns);
+  if(t.roomUnlockAt)await db.ref('tournaments/'+gid+'/'+id+'/roomUnlockAt').set(t.roomUnlockAt+add);
+  // notify joined users
+  notifyJoined(t,'⏱ Match Time Changed',(+m)+' min add hue. Naya time: '+fmt(ns));
+  toast('+'+m+' min added ✓');
+}
+async function cancelTour(gid,id){
+  if(!confirm('Is tournament ko cancel karein? Joined users ko refund + notify hoga.'))return;
+  const t=(await db.ref('tournaments/'+gid+'/'+id).once('value')).val()||{};
+  // refund entry fee to each joined slot (playCoin)
+  const taken=t.slotsTaken||{},fee=t.entryFee||0;
+  if(fee>0){
+    const byUser={};Object.values(taken).forEach(s=>{byUser[s.uid]=(byUser[s.uid]||0)+1;});
+    for(const uid in byUser){
+      const refund=fee*byUser[uid];
+      const cur=(await db.ref('users/'+uid+'/playCoin').once('value')).val()||0;
+      await db.ref('users/'+uid+'/playCoin').set(cur+refund);
+      await db.ref('transactions/'+uid).push({type:'credit',dir:'credit',amount:refund,note:'Refund: '+(t.title||'cancelled match'),badge:'ok',at:Date.now()});
+    }
+  }
+  await db.ref('tournaments/'+gid+'/'+id+'/status').set('cancelled');
+  notifyJoined(t,'❌ Tournament Cancelled',(t.title||'Match')+' cancel ho gaya. Entry fee refund kar di gayi.');
+  toast('Cancelled + refunded ✓');
+}
+function notifyJoined(t,title,body){
+  const taken=t.slotsTaken||{},seen={};
+  Object.values(taken).forEach(s=>{if(s.uid&&!seen[s.uid]){seen[s.uid]=1;
+    db.ref('notifications/'+s.uid).push({title,body,at:Date.now(),read:false});}});
+}
 function tourForm(gid,t){
   gid=gid||$('tourGame').value; t=t||{};
   if(!gid)return toast('Pehle game select karo');
@@ -448,6 +484,13 @@ function loadRoomTours(){
           <input class="fld" id="rid_${t.id}" placeholder="Room ID" value="${esc(t.roomId||'')}">
           <input class="fld" id="rpw_${t.id}" placeholder="Password" value="${esc(t.roomPass||'')}">
         </div>
+        <label class="lab">Room unlock — user kab dekh paayega</label>
+        <select class="fld" id="runlock_${t.id}">
+          <option value="0">Turant (abhi unlock)</option>
+          <option value="5">5 min cooldown</option>
+          <option value="10">10 min cooldown</option>
+          <option value="start" selected>Match start time pe</option>
+        </select>
         <div class="acts">
           <button class="btn green sm" onclick="pushRoom('${gid}','${t.id}')">Save & Notify Users</button>
           <button class="btn blue sm" onclick="notifyStart('${gid}','${t.id}')">Send 'Match Starting' Alert</button>
@@ -459,13 +502,19 @@ function loadRoomTours(){
 async function pushRoom(gid,id){
   const rid=$('rid_'+id).value.trim(), rpw=$('rpw_'+id).value.trim();
   if(!rid&&!rpw)return toast('Room ID ya password daalo');
-  await db.ref('tournaments/'+gid+'/'+id).update({roomId:rid,roomPass:rpw});
+  const t0=(await db.ref('tournaments/'+gid+'/'+id).once('value')).val()||{};
+  const sel=$('runlock_'+id)?$('runlock_'+id).value:'0';
+  let unlockAt;
+  if(sel==='start')unlockAt=t0.startAt||Date.now();
+  else unlockAt=Date.now()+(+sel||0)*60000;
+  await db.ref('tournaments/'+gid+'/'+id).update({roomId:rid,roomPass:rpw,roomUnlockAt:unlockAt});
   const t=(await db.ref('tournaments/'+gid+'/'+id).once('value')).val();
   const uids=uniqueUids(t.slotsTaken);
+  const when=(+sel===0&&sel!=='start')?'Abhi unlock hai':'Unlock: '+fmt(unlockAt);
   for(const uid of uids){
     await db.ref('notifications/'+uid).push({
-      title:'🔑 Room ID & Password Ready!',
-      body:`${t.title} — Room ID: ${rid} | Password: ${rpw}. Tap to view.`,
+      title:'🔑 Room Details Ready!',
+      body:`${t.title} — Room publish ho gaya. ${when}. Tap to open.`,
       gid,mid:id,type:'room',at:Date.now(),read:false
     });
   }
@@ -764,6 +813,13 @@ function renderSettings(){
         <label class="lab">Telegram username (no @)</label><input class="fld" id="setTg" value="${esc(v.telegram||'')}">
         <label class="lab">Instagram URL</label><input class="fld" id="setIg" value="${esc(v.instagram||'')}">
       </div>
+      <div class="card"><h3>🖼️ Social Icons (apni pasand ke icon upload karo)</h3>
+        <p class="muted" style="margin-bottom:10px">User app me WhatsApp/Facebook/Instagram pe ye icons dikhenge. Blank chhodo toh default emoji aayega.</p>
+        <label class="lab">WhatsApp icon</label>${imgInput('setWaIcon')}
+        <label class="lab">Facebook icon</label>${imgInput('setFbIcon')}
+        <label class="lab">Instagram icon</label>${imgInput('setIgIcon')}
+        <label class="lab">Telegram icon</label>${imgInput('setTgIcon')}
+      </div>
       <div class="card"><h3>⚙️ More Config</h3>
         <div class="grid2">
           <div><label class="lab">Max deposit (₹)</label><input class="fld" id="setMaxDep" type="number" value="${v.maxDeposit||9999}"></div>
@@ -776,11 +832,16 @@ function renderSettings(){
       </div>
       <button class="btn green" onclick="saveSettings()">💾 Save All Settings</button>`;
     bindImg('setLogo'); if(v.logoUrl)$('setLogo').value=v.logoUrl;
+    bindImg('setWaIcon'); if(v.waIcon)$('setWaIcon').value=v.waIcon;
+    bindImg('setFbIcon'); if(v.fbIcon)$('setFbIcon').value=v.fbIcon;
+    bindImg('setIgIcon'); if(v.igIcon)$('setIgIcon').value=v.igIcon;
+    bindImg('setTgIcon'); if(v.tgIcon)$('setTgIcon').value=v.tgIcon;
   });
 }
 async function saveSettings(){
   await db.ref('settings').update({
     appName:$('setName').value,logoUrl:$('setLogo').value,welcomeMsg:$('setWelcome').value,
+    waIcon:$('setWaIcon').value,fbIcon:$('setFbIcon').value,igIcon:$('setIgIcon').value,tgIcon:$('setTgIcon').value,
     minDeposit:+$('setMinDep').value||10,upiId:$('setUpi').value,upiName:$('setUpiName').value,
     minWithdraw:+$('setMinWd').value||50,maxWithdraw:+$('setMaxWd').value||5000,
     maxAccountsPerDevice:+$('setMaxAcc').value||3,
