@@ -55,6 +55,8 @@ label.lab{display:block;font-size:13px;font-weight:700;color:#aeb6c1;margin:10px
 .pill.pend{background:#3a2e10;color:var(--gold)}
 
 .item{background:#0e131b;border:1px solid #222a35;border-radius:12px;padding:13px;margin-bottom:10px}
+.listcount{background:#0d1b2c;border:1px solid #1f3a52;color:#7cc4ff;font-weight:800;font-size:13px;padding:10px 14px;border-radius:10px;margin-bottom:12px;position:sticky;top:0;z-index:5}
+.serial{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;padding:0 6px;background:#1f9bf0;color:#fff;border-radius:8px;font-size:12px;font-weight:800;margin-right:2px}
 .item .h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .item .h b{font-size:15px}
 .item .meta{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.5}
@@ -254,10 +256,11 @@ function renderGames(){
   db.ref('games').on('value',s=>{
     const list=[]; s.forEach(c=>list.push({id:c.key,...c.val()}));
     list.sort((a,b)=>(a.order||0)-(b.order||0));
-    $('gameList').innerHTML=list.map(g=>`
+    $('gameList').innerHTML=(list.length?'<div class="listcount">🎮 Total Games: '+list.length+'</div>':'')+list.map((g,i)=>`
       <div class="item">
         <div class="h">
           <div style="display:flex;gap:12px;align-items:center">
+            <span class="serial">#${i+1}</span>
             ${g.img?`<img src="${g.img}" style="width:50px;height:50px;border-radius:10px;object-fit:cover">`:''}
             <div><b>${esc(g.name)}</b><div class="meta">Order: ${g.order||0} • <span class="pill ${g.active===false?'off':'on'}">${g.active===false?'OFFLINE':'LIVE'}</span></div></div>
           </div>
@@ -313,11 +316,11 @@ function loadTours(){
   db.ref('tournaments/'+gid).on('value',s=>{
     const list=[]; s.forEach(c=>list.push({id:c.key,...c.val()}));
     list.sort((a,b)=>(b.startAt||0)-(a.startAt||0));
-    $('tourList').innerHTML=list.map(t=>{
+    $('tourList').innerHTML=(list.length?'<div class="listcount">🏆 Total Tournaments: '+list.length+'</div>':'')+list.map((t,i)=>{
       const joined=t.slotsTaken?Object.keys(t.slotsTaken).length:0;
       return `<div class="item">
         ${t.banner?`<img class="thumb" src="${t.banner}">`:''}
-        <div class="h"><div><b>${esc(t.title)}</b>
+        <div class="h"><div><b><span class="serial">#${i+1}</span> ${esc(t.title)}</b>
           <div class="meta">${fmt(t.startAt)} • ${(t.type||'solo').toUpperCase()} • ${joined}/${t.totalSlots||48} joined • <span class="pill ${t.status==='complete'?'off':'on'}">${(t.status||'upcoming').toUpperCase()}</span></div></div></div>
         <div class="acts">
           <button class="btn grey sm" onclick='tourForm("${gid}",${JSON.stringify(t).replace(/'/g,"&#39;")})'>Edit</button>
@@ -539,9 +542,9 @@ function renderBanners(){
   $('p-banners').innerHTML=`<button class="btn green" onclick="bannerForm()">+ Add Banner</button><div id="banList" style="margin-top:14px"></div>`;
   db.ref('settings/banners').on('value',s=>{
     const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
-    $('banList').innerHTML=list.map(b=>`
-      <div class="item"><img class="thumb" src="${b.img}">
-        <div class="meta">Link: ${esc(b.link||'none')}</div>
+    $('banList').innerHTML=(list.length?'<div class="listcount">🖼️ Total Banners: '+list.length+'</div>':'')+list.map((b,i)=>`
+      <div class="item"><div class="h"><span class="serial">#${i+1}</span><img class="thumb" src="${b.img}" style="flex:1"></div>
+        <div class="meta">Link on tap: ${esc(b.link||'none')}</div>
         <div class="acts"><button class="btn red sm" onclick="delNode('settings/banners/${b.id}','Banner')">Delete</button></div>
       </div>`).join('') || '<div class="empty">No banners</div>';
   });
@@ -563,8 +566,8 @@ function renderVideos(){
   $('p-videos').innerHTML=`<button class="btn green" onclick="videoForm()">+ Add Video</button><div id="vidList" style="margin-top:14px"></div>`;
   db.ref('videos').on('value',s=>{
     const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
-    $('vidList').innerHTML=list.map(v=>`
-      <div class="item">${v.thumb?`<img class="thumb" src="${v.thumb}">`:''}
+    $('vidList').innerHTML=(list.length?'<div class="listcount">📺 Total Videos: '+list.length+'</div>':'')+list.map((v,i)=>`
+      <div class="item"><div class="h"><span class="serial">#${i+1}</span>${v.thumb?`<img class="thumb" src="${v.thumb}" style="flex:1">`:''}</div>
         <b>${esc(v.title)}</b><div class="meta">${esc(v.link)}</div>
         <div class="acts"><button class="btn red sm" onclick="delNode('videos/${v.id}','Video')">Delete</button></div>
       </div>`).join('') || '<div class="empty">No videos</div>';
@@ -589,11 +592,12 @@ function renderGifts(){
   $('p-gifts').innerHTML=`<button class="btn gold" onclick="giftForm()">+ Create Gift Code</button><div id="giftList" style="margin-top:14px"></div>`;
   db.ref('giftCodes').on('value',s=>{
     const list=[];s.forEach(c=>list.push({code:c.key,...c.val()}));
-    $('giftList').innerHTML=list.map(g=>{
+    $('giftList').innerHTML=(list.length?'<div class="listcount">🎁 Total Gift Codes: '+list.length+'</div>':'')+list.map((g,i)=>{
       const used=g.claimedBy?Object.keys(g.claimedBy).length:0;
-      return `<div class="item"><div class="h"><div>
-        <b style="letter-spacing:1px">${esc(g.code)}</b>
-        <div class="meta">${g.amount} coins • ${used}/${g.maxClaims||'∞'} claimed • ${g.minDeposit?'Min deposit ₹'+g.minDeposit:'No deposit needed'} • <span class="pill ${g.active===false?'off':'on'}">${g.active===false?'OFF':'ON'}</span></div></div>
+      return `<div class="item"><div class="h"><div style="display:flex;gap:10px;align-items:flex-start">
+        <span class="serial">#${i+1}</span>
+        <div><b style="letter-spacing:1px">${esc(g.code)}</b>
+        <div class="meta">${g.amount} coins • ${used}/${g.maxClaims||'∞'} claimed • ${g.minDeposit?'Min deposit ₹'+g.minDeposit:'No deposit needed'} • <span class="pill ${g.active===false?'off':'on'}">${g.active===false?'OFF':'ON'}</span></div></div></div>
         <div class="toggle ${g.active===false?'':'on'}" onclick="db.ref('giftCodes/${g.code}/active').set(${g.active===false})"><i></i></div></div>
         <div class="acts"><button class="btn blue sm" onclick="viewClaims('${g.code}')">View Claims (${used})</button><button class="btn red sm" onclick="delNode('giftCodes/${g.code}','Gift code')">Delete</button></div>
       </div>`;
@@ -634,10 +638,11 @@ function renderDeps(){
   $('p-deps').innerHTML='<div class="spinner"></div>';
   db.ref('deposits').orderByChild('at').on('value',s=>{
     const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));list.reverse();
-    $('p-deps').innerHTML=list.map(d=>`
+    const pend=list.filter(d=>(d.status||'pending')==='pending').length;
+    $('p-deps').innerHTML=(list.length?'<div class="listcount">💰 Total Deposits: '+list.length+' • Pending: '+pend+'</div>':'')+list.map((d,i)=>`
       <div class="item"><div class="h"><div>
-        <b>₹${d.amount} — ${esc(d.name)}</b>
-        <div class="meta">${esc(d.email)} • ${esc(d.phone||'')}<br>Ref/UTR: ${esc(d.ref||'-')} • ${fmt(d.at)}</div></div>
+        <b><span class="serial">#${i+1}</span> ₹${d.amount} — ${esc(d.name)}</b>
+        <div class="meta">${esc(d.email)} • ${esc(d.phone||'')}<br>Ref/UTR: ${esc(d.ref||'-')} • Method: ${esc(d.method||'-')} • ${fmt(d.at)}</div></div>
         <span class="pill ${d.status==='approved'?'on':d.status==='rejected'?'off':'pend'}">${(d.status||'pending').toUpperCase()}</span></div>
         ${d.status==='pending'?`<div class="acts">
           <button class="btn green sm" onclick="approveDep('${d.id}','${d.uid}',${d.amount})">Approve</button>
@@ -668,10 +673,11 @@ function renderWds(){
   $('p-wds').innerHTML='<div class="spinner"></div>';
   db.ref('withdrawals').orderByChild('at').on('value',s=>{
     const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));list.reverse();
-    $('p-wds').innerHTML=list.map(w=>`
+    const pend=list.filter(w=>(w.status||'pending')==='pending').length;
+    $('p-wds').innerHTML=(list.length?'<div class="listcount">💸 Total Withdrawals: '+list.length+' • Pending: '+pend+'</div>':'')+list.map((w,i)=>`
       <div class="item"><div class="h"><div>
-        <b>₹${w.amount} — ${esc(w.name)}</b>
-        <div class="meta">UPI: ${esc(w.upi)} • ${esc(w.email)}<br>${fmt(w.at)}</div></div>
+        <b><span class="serial">#${i+1}</span> ₹${w.amount} — ${esc(w.name)}</b>
+        <div class="meta">Type: ${esc((w.type||'upi').toUpperCase())}${w.upi?' • UPI: '+esc(w.upi):''}${w.account?' • A/C: '+esc(w.account)+' ('+esc(w.ifsc||'')+')':''}${w.item?' • Item: '+esc(w.item):''}<br>${esc(w.email)} • ${fmt(w.at)}</div></div>
         <span class="pill ${w.status==='approved'?'on':w.status==='rejected'?'off':'pend'}">${(w.status||'pending').toUpperCase()}</span></div>
         ${w.status==='pending'?`<div class="acts">
           <button class="btn green sm" onclick="approveWd('${w.id}','${w.uid}',${w.amount})">Mark Paid</button>
@@ -704,8 +710,9 @@ function renderUsers(){
 function filterUsers(){
   const q=($('uSearch').value||'').toLowerCase();
   const list=(window._users||[]).filter(u=>!q||(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)||(u.phone||'').includes(q));
-  $('userList').innerHTML=list.map(u=>`
+  $('userList').innerHTML=(list.length?'<div class="listcount">👥 Total Users: '+list.length+(q?' (filtered)':'')+'</div>':'')+list.map((u,i)=>`
     <div class="item"><div class="h"><div style="display:flex;gap:12px;align-items:flex-start">
+      <span class="serial">#${i+1}</span>
       ${u.photoUrl?`<img src="${u.photoUrl}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0">`:`<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ff7a18,#22c55e);flex-shrink:0"></div>`}
       <div><b>${esc(u.name)} ${u.banned?'<span class="pill off">BANNED</span>':''} <span class="pill ${u.provider==='google'?'on':''}">${(u.provider||'email').toUpperCase()}</span></b>
       <div class="meta">${esc(u.email)} • ${esc(u.phone||'')}<br>FF: ${esc(u.ffName||'-')} (${esc(u.ffUid||'-')}) • Code: ${esc(u.referralCode||'-')}<br>Play:${(u.playCoin||0).toFixed(0)} Win:${(u.winnings||0).toFixed(0)} Ref:${(u.referralReward||0).toFixed(0)} Bonus:${(u.bonusReward||0).toFixed(0)} • Played:${u.tournamentsPlayed||0}/${u.rebateRequired||0}<br>${u.provider==='google'?'GoogleID: '+esc(u.googleId||'-')+'<br>':''}IP: ${esc(u.ip||'-')} • ${esc(u.model||'-')} • Joined: ${u.createdAt?fmt(u.createdAt):'-'}</div></div></div></div>
@@ -895,14 +902,14 @@ function renderContent(){
     </div>`;
   // Game Rules list
   db.ref('gameRules').on('value',s=>{const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
-    $('rulesList').innerHTML=list.length?list.map(r=>`<div class="item"><div class="h"><b>${esc(r.title)}</b><div class="row">
+    $('rulesList').innerHTML=(list.length?'<div class="listcount">📋 Total Rules: '+list.length+'</div>':'')+(list.length?list.map((r,i)=>`<div class="item"><div class="h"><b><span class="serial">#${i+1}</span> ${esc(r.title)}</b><div class="row">
       <button class="btn blue sm" onclick='ruleForm(${JSON.stringify(JSON.stringify({id:r.id,title:r.title,content:r.content}))})'>Edit</button>
       <button class="btn red sm" onclick="delNode('gameRules/${r.id}','Rule')">Del</button></div></div>
-      <div class="meta">${esc((r.content||'').slice(0,120))}</div></div>`).join(''):'<p class="muted">No rules yet</p>';});
+      <div class="meta">${esc((r.content||'').slice(0,120))}</div></div>`).join(''):'<p class="muted">No rules yet</p>');});
   // Redeem list
   db.ref('settings/redeemItems').on('value',s=>{const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
-    $('redeemList').innerHTML=list.length?list.map(it=>`<div class="item"><div class="h"><b>${esc(it.name)} — ${it.coins} coins</b>
-      <button class="btn red sm" onclick="delNode('settings/redeemItems/${it.id}','Item')">Del</button></div></div>`).join(''):'<p class="muted">No items yet</p>';});
+    $('redeemList').innerHTML=(list.length?'<div class="listcount">🛒 Total Items: '+list.length+'</div>':'')+(list.length?list.map((it,i)=>`<div class="item"><div class="h"><b><span class="serial">#${i+1}</span> ${esc(it.name)} — ${it.coins} coins</b>
+      <button class="btn red sm" onclick="delNode('settings/redeemItems/${it.id}','Item')">Del</button></div></div>`).join(''):'<p class="muted">No items yet</p>');});
 }
 function ruleForm(json){
   let r={};try{r=json?JSON.parse(json):{};}catch(e){}
