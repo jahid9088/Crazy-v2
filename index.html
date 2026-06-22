@@ -45,6 +45,8 @@ label.lab{display:block;font-size:13px;font-weight:700;color:#aeb6c1;margin:10px
 @keyframes f{from{opacity:0}to{opacity:1}}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.grouphead{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:900;letter-spacing:1.5px;color:#7cc4ff;text-transform:uppercase;margin:24px 0 10px;padding:11px 14px;background:linear-gradient(90deg,#11203200,#11283f);border-left:4px solid #1f9bf0;border-radius:8px}
+.grouphead:first-child{margin-top:4px}
 .card h3{font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .row .fld{flex:1;min-width:120px}
@@ -253,9 +255,10 @@ async function renderDash(){
 /* ========== GAMES (on/off) ========== */
 function renderGames(){
   $('p-games').innerHTML=`<button class="btn green" onclick="gameForm()">+ Add Game</button><div id="gameList" style="margin-top:14px"><div class="spinner"></div></div>`;
+  db.ref('games').off();
   db.ref('games').on('value',s=>{
     const list=[]; s.forEach(c=>list.push({id:c.key,...c.val()}));
-    list.sort((a,b)=>(a.order||0)-(b.order||0));
+    list.sort((a,b)=>(a.order||0)-(b.order||0)||(a.createdAt||0)-(b.createdAt||0));
     $('gameList').innerHTML=(list.length?'<div class="listcount">🎮 Total Games: '+list.length+'</div>':'')+list.map((g,i)=>`
       <div class="item">
         <div class="h">
@@ -293,7 +296,7 @@ async function saveGame(id){
   const data={name:$('gName').value.trim(),order:+$('gOrder').value||0,img:$('gImg').value,active:true};
   if(!data.name)return toast('Name daalo');
   if(id)await db.ref('games/'+id).update(data);
-  else await db.ref('games').push(data);
+  else{data.createdAt=Date.now();await db.ref('games').push(data);}
   closeModal();toast('Saved ✓');
 }
 
@@ -540,30 +543,35 @@ function uniqueUids(slots){
 /* ========== BANNERS ========== */
 function renderBanners(){
   $('p-banners').innerHTML=`<button class="btn green" onclick="bannerForm()">+ Add Banner</button><div id="banList" style="margin-top:14px"></div>`;
+  db.ref('settings/banners').off();
   db.ref('settings/banners').on('value',s=>{
     const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
+    list.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
     $('banList').innerHTML=(list.length?'<div class="listcount">🖼️ Total Banners: '+list.length+'</div>':'')+list.map((b,i)=>`
       <div class="item"><div class="h"><span class="serial">#${i+1}</span><img class="thumb" src="${b.img}" style="flex:1"></div>
         <div class="meta">Link on tap: ${esc(b.link||'none')}</div>
-        <div class="acts"><button class="btn red sm" onclick="delNode('settings/banners/${b.id}','Banner')">Delete</button></div>
+        <div class="acts"><button class="btn grey sm" onclick='bannerForm(${JSON.stringify(JSON.stringify({id:b.id,img:b.img,link:b.link})).replace(/'/g,"&#39;")})'>Edit</button><button class="btn red sm" onclick="delNode('settings/banners/${b.id}','Banner')">Delete</button></div>
       </div>`).join('') || '<div class="empty">No banners</div>';
   });
 }
-function bannerForm(){
-  modal(`<h2>Add Banner</h2>${imgInput('bImg')}
-    <label class="lab">Link on tap (optional)</label><input class="fld" id="bLink" placeholder="https://...">
-    <div class="row" style="margin-top:14px"><button class="btn green" onclick="saveBanner()">Save</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
-  bindImg('bImg');
+function bannerForm(json){
+  let b={};try{b=json?JSON.parse(json):{};}catch(e){}
+  modal(`<h2>${b.id?'Edit':'Add'} Banner</h2>${imgInput('bImg')}
+    <label class="lab">Link on tap (optional)</label><input class="fld" id="bLink" placeholder="https://..." value="${esc(b.link||'')}">
+    <div class="row" style="margin-top:14px"><button class="btn green" onclick="saveBanner('${b.id||''}')">Save</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
+  bindImg('bImg'); if(b.img)$('bImg').value=b.img;
 }
-async function saveBanner(){
+async function saveBanner(id){
   if(!$('bImg').value)return toast('Image upload karo');
-  await db.ref('settings/banners').push({img:$('bImg').value,link:$('bLink').value.trim()});
+  if(id)await db.ref('settings/banners/'+id).update({img:$('bImg').value,link:$('bLink').value.trim()});
+  else await db.ref('settings/banners').push({img:$('bImg').value,link:$('bLink').value.trim(),createdAt:Date.now()});
   closeModal();toast('Saved ✓');
 }
 
 /* ========== VIDEOS ========== */
 function renderVideos(){
   $('p-videos').innerHTML=`<button class="btn green" onclick="videoForm()">+ Add Video</button><div id="vidList" style="margin-top:14px"></div>`;
+  db.ref('videos').off();
   db.ref('videos').on('value',s=>{
     const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
     $('vidList').innerHTML=(list.length?'<div class="listcount">📺 Total Videos: '+list.length+'</div>':'')+list.map((v,i)=>`
@@ -590,8 +598,10 @@ async function saveVideo(){
 /* ========== GIFT CODES ========== */
 function renderGifts(){
   $('p-gifts').innerHTML=`<button class="btn gold" onclick="giftForm()">+ Create Gift Code</button><div id="giftList" style="margin-top:14px"></div>`;
+  db.ref('giftCodes').off();
   db.ref('giftCodes').on('value',s=>{
     const list=[];s.forEach(c=>list.push({code:c.key,...c.val()}));
+    list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     $('giftList').innerHTML=(list.length?'<div class="listcount">🎁 Total Gift Codes: '+list.length+'</div>':'')+list.map((g,i)=>{
       const used=g.claimedBy?Object.keys(g.claimedBy).length:0;
       return `<div class="item"><div class="h"><div style="display:flex;gap:10px;align-items:flex-start">
@@ -599,7 +609,7 @@ function renderGifts(){
         <div><b style="letter-spacing:1px">${esc(g.code)}</b>
         <div class="meta">${g.amount} coins • ${used}/${g.maxClaims||'∞'} claimed • ${g.minDeposit?'Min deposit ₹'+g.minDeposit:'No deposit needed'} • <span class="pill ${g.active===false?'off':'on'}">${g.active===false?'OFF':'ON'}</span></div></div></div>
         <div class="toggle ${g.active===false?'':'on'}" onclick="db.ref('giftCodes/${g.code}/active').set(${g.active===false})"><i></i></div></div>
-        <div class="acts"><button class="btn blue sm" onclick="viewClaims('${g.code}')">View Claims (${used})</button><button class="btn red sm" onclick="delNode('giftCodes/${g.code}','Gift code')">Delete</button></div>
+        <div class="acts"><button class="btn grey sm" onclick='giftForm(${JSON.stringify(JSON.stringify({code:g.code,amount:g.amount,maxClaims:g.maxClaims,minDeposit:g.minDeposit}))})'>Edit</button><button class="btn blue sm" onclick="viewClaims('${g.code}')">View Claims (${used})</button><button class="btn red sm" onclick="delNode('giftCodes/${g.code}','Gift code')">Delete</button></div>
       </div>`;
     }).join('') || '<div class="empty">No gift codes</div>';
   });
@@ -615,27 +625,34 @@ async function viewClaims(code){
   }
   modal('<h2>Claims: '+esc(code)+' ('+uids.length+')</h2><div style="max-height:60vh;overflow:auto">'+rows+'</div><div class="row" style="margin-top:12px"><button class="btn grey" onclick="closeModal()">Close</button></div>');
 }
-function giftForm(){
-  modal(`<h2>Create Gift Code</h2>
-    <label class="lab">Code (uppercase)</label><input class="fld" id="gCode" placeholder="FIRE100" style="text-transform:uppercase">
+function giftForm(json){
+  let g={};try{g=json?JSON.parse(json):{};}catch(e){}
+  modal(`<h2>${g.code?'Edit':'Create'} Gift Code</h2>
+    <label class="lab">Code (uppercase)</label><input class="fld" id="gCode" placeholder="FIRE100" style="text-transform:uppercase" value="${esc(g.code||'')}" ${g.code?'readonly':''}>
     <div class="grid2">
-      <div><label class="lab">Reward coins</label><input class="fld" id="gAmt" type="number" value="10"></div>
-      <div><label class="lab">Max claims (0=∞)</label><input class="fld" id="gMax" type="number" value="0"></div>
+      <div><label class="lab">Reward coins</label><input class="fld" id="gAmt" type="number" value="${g.amount||10}"></div>
+      <div><label class="lab">Max claims (0=∞)</label><input class="fld" id="gMax" type="number" value="${g.maxClaims||0}"></div>
     </div>
-    <label class="lab">Min deposit required to claim (₹, 0=none)</label><input class="fld" id="gMin" type="number" value="0">
-    <div class="row" style="margin-top:14px"><button class="btn gold" onclick="saveGift()">Create</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
+    <label class="lab">Min deposit required to claim (₹, 0=none)</label><input class="fld" id="gMin" type="number" value="${g.minDeposit||0}">
+    <div class="row" style="margin-top:14px"><button class="btn gold" onclick="saveGift(${g.code?'true':'false'})">${g.code?'Update':'Create'}</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
 }
-async function saveGift(){
+async function saveGift(isEdit){
   const code=$('gCode').value.trim().toUpperCase();
   if(!code)return toast('Code daalo');
-  await db.ref('giftCodes/'+code).set({
-    amount:+$('gAmt').value||0,maxClaims:+$('gMax').value||0,minDeposit:+$('gMin').value||0,active:true,createdAt:Date.now()});
-  closeModal();toast('Gift code created ✓');
+  if(!isEdit){
+    const ex=await db.ref('giftCodes/'+code).once('value');
+    if(ex.exists())return toast('Yeh code already exists — dusra naam do ya Edit karo');
+  }
+  await db.ref('giftCodes/'+code).update({
+    amount:+$('gAmt').value||0,maxClaims:+$('gMax').value||0,minDeposit:+$('gMin').value||0,
+    active:true,createdAt:Date.now()});
+  closeModal();toast(isEdit?'Gift code updated ✓':'Gift code created ✓');
 }
 
 /* ========== DEPOSITS ========== */
 function renderDeps(){
   $('p-deps').innerHTML='<div class="spinner"></div>';
+  db.ref('deposits').off();
   db.ref('deposits').orderByChild('at').on('value',s=>{
     const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));list.reverse();
     const pend=list.filter(d=>(d.status||'pending')==='pending').length;
@@ -671,6 +688,7 @@ async function rejectDep(id,uid){
 /* ========== WITHDRAWALS ========== */
 function renderWds(){
   $('p-wds').innerHTML='<div class="spinner"></div>';
+  db.ref('withdrawals').off();
   db.ref('withdrawals').orderByChild('at').on('value',s=>{
     const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));list.reverse();
     const pend=list.filter(w=>(w.status||'pending')==='pending').length;
@@ -701,25 +719,41 @@ async function rejectWd(id,uid,amount){
 
 /* ========== USERS ========== */
 function renderUsers(){
-  $('p-users').innerHTML=`<input class="fld" id="uSearch" placeholder="Search name / email / phone" oninput="filterUsers()"><div id="userList"><div class="spinner"></div></div>`;
+  $('p-users').innerHTML=`<input class="fld" id="uSearch" placeholder="Search name / email / phone / FF UID / code" oninput="filterUsers()"><div id="userList"><div class="spinner"></div></div>`;
+  db.ref('users').off();
   db.ref('users').on('value',s=>{
     window._users=[];s.forEach(c=>window._users.push({uid:c.key,...c.val()}));
+    window._users.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     filterUsers();
   });
 }
 function filterUsers(){
   const q=($('uSearch').value||'').toLowerCase();
-  const list=(window._users||[]).filter(u=>!q||(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)||(u.phone||'').includes(q));
-  $('userList').innerHTML=(list.length?'<div class="listcount">👥 Total Users: '+list.length+(q?' (filtered)':'')+'</div>':'')+list.map((u,i)=>`
-    <div class="item"><div class="h"><div style="display:flex;gap:12px;align-items:flex-start">
+  const list=(window._users||[]).filter(u=>!q||(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)||(u.phone||'').includes(q)||(u.ffUid||'').toLowerCase().includes(q)||(u.referralCode||'').toLowerCase().includes(q));
+  $('userList').innerHTML=(list.length?'<div class="listcount">👥 Total Users: '+(window._users||[]).length+(q?' • Showing: '+list.length:'')+'</div>':'')+list.map((u,i)=>{
+    const dev=u.device||{};
+    return `<div class="item"><div class="h"><div style="display:flex;gap:12px;align-items:flex-start">
       <span class="serial">#${i+1}</span>
-      ${u.photoUrl?`<img src="${u.photoUrl}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0">`:`<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ff7a18,#22c55e);flex-shrink:0"></div>`}
+      ${u.photoUrl?`<img src="${u.photoUrl}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;flex-shrink:0">`:`<div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#ff7a18,#22c55e);flex-shrink:0"></div>`}
       <div><b>${esc(u.name)} ${u.banned?'<span class="pill off">BANNED</span>':''} <span class="pill ${u.provider==='google'?'on':''}">${(u.provider||'email').toUpperCase()}</span></b>
-      <div class="meta">${esc(u.email)} • ${esc(u.phone||'')}<br>FF: ${esc(u.ffName||'-')} (${esc(u.ffUid||'-')}) • Code: ${esc(u.referralCode||'-')}<br>Play:${(u.playCoin||0).toFixed(0)} Win:${(u.winnings||0).toFixed(0)} Ref:${(u.referralReward||0).toFixed(0)} Bonus:${(u.bonusReward||0).toFixed(0)} • Played:${u.tournamentsPlayed||0}/${u.rebateRequired||0}<br>${u.provider==='google'?'GoogleID: '+esc(u.googleId||'-')+'<br>':''}IP: ${esc(u.ip||'-')} • ${esc(u.model||'-')} • Joined: ${u.createdAt?fmt(u.createdAt):'-'}</div></div></div></div>
+      <div class="meta">
+        📧 ${esc(u.email||'-')}<br>
+        📱 ${esc(u.phone||'-')}<br>
+        🎮 FF: ${esc(u.ffName||'-')} (UID: ${esc(u.ffUid||'-')})<br>
+        🔗 Referral code: ${esc(u.referralCode||'-')}${u.referredBy?' • Referred by: '+esc(u.referredBy):''}<br>
+        💰 Play:${(u.playCoin||0).toFixed(0)} Win:${(u.winnings||0).toFixed(0)} Ref:${(u.referralReward||0).toFixed(0)} Bonus:${(u.bonusReward||0).toFixed(0)}<br>
+        🏆 Played:${u.tournamentsPlayed||0}/${u.rebateRequired||0} • Deposited:₹${u.depositTotal||0}<br>
+        ${u.provider==='google'?'🆔 GoogleID: '+esc(u.googleId||'-')+'<br>':''}
+        🌐 IP: ${esc(u.ip||'-')}<br>
+        📟 Device: ${esc(u.model||dev.model||'-')} • ${esc(dev.platform||'-')}<br>
+        🔑 Fingerprint: ${esc(u.fp||dev.fp||'-')}<br>
+        🗣️ Lang: ${esc(dev.lang||'-')} • Screen: ${esc(dev.screen||'-')}<br>
+        📅 Joined: ${u.createdAt?fmt(u.createdAt):'-'} • Last login: ${u.lastLoginAt?fmt(u.lastLoginAt):'-'}
+      </div></div></div></div>
     <div class="acts">
       <button class="btn blue sm" onclick="adjustBal('${u.uid}',0)">Adjust Balance</button>
       <button class="btn ${u.banned?'green':'red'} sm" onclick="banUser('${u.uid}',${!!u.banned})">${u.banned?'Unban':'Ban'}</button>
-    </div></div>`).join('') || '<div class="empty">No users</div>';
+    </div></div>`;}).join('') || '<div class="empty">No users</div>';
 }
 function adjustBal(uid,cur){
   modal(`<h2>Adjust Balance</h2>
@@ -807,11 +841,13 @@ function renderSettings(){
   db.ref('settings').once('value').then(s=>{
     const v=s.val()||{}; window._set=v;
     $('p-settings').innerHTML=`
+      <div class="grouphead">🎨 BASIC SETTINGS</div>
       <div class="card"><h3>🎨 Branding</h3>
         <label class="lab">App name</label><input class="fld" id="setName" value="${esc(v.appName||'CrazyFire')}">
         <label class="lab">App logo</label>${imgInput('setLogo')}
         <label class="lab">Welcome message</label><input class="fld" id="setWelcome" value="${esc(v.welcomeMsg||'Welcome to CrazyFire')}">
       </div>
+      <div class="grouphead">💎 ADVANCED SETTINGS</div>
       <div class="card"><h3>💵 Payments & Rebate</h3>
         <div class="grid2">
           <div><label class="lab">Min deposit (₹)</label><input class="fld" id="setMinDep" type="number" value="${v.minDeposit||10}"></div>
@@ -824,9 +860,11 @@ function renderSettings(){
         <label class="lab">UPI display name</label><input class="fld" id="setUpiName" value="${esc(v.upiName||'')}">
         <p class="muted" style="margin-top:8px">Rebate rule: deposit ₹X → user ko X tournaments khelne padenge (auto-applied on approval).</p>
       </div>
+      <div class="grouphead">🛡️ PROTECTION SETTINGS</div>
       <div class="card"><h3>🛡️ Anti-Spam</h3>
         <label class="lab">Max accounts per device</label><input class="fld" id="setMaxAcc" type="number" value="${v.maxAccountsPerDevice||3}">
       </div>
+      <div class="grouphead">📜 POLICY & SUPPORT SETTINGS</div>
       <div class="card"><h3>📞 Support Links</h3>
         <label class="lab">WhatsApp number (with country code, no +)</label><input class="fld" id="setWa" value="${esc(v.whatsapp||'')}">
         <label class="lab">Telegram username (no @)</label><input class="fld" id="setTg" value="${esc(v.telegram||'')}">
@@ -901,12 +939,14 @@ function renderContent(){
       <button class="btn green" onclick="saveInfoPages()">💾 Save Info Pages</button>
     </div>`;
   // Game Rules list
+  db.ref('gameRules').off();
   db.ref('gameRules').on('value',s=>{const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
     $('rulesList').innerHTML=(list.length?'<div class="listcount">📋 Total Rules: '+list.length+'</div>':'')+(list.length?list.map((r,i)=>`<div class="item"><div class="h"><b><span class="serial">#${i+1}</span> ${esc(r.title)}</b><div class="row">
       <button class="btn blue sm" onclick='ruleForm(${JSON.stringify(JSON.stringify({id:r.id,title:r.title,content:r.content}))})'>Edit</button>
       <button class="btn red sm" onclick="delNode('gameRules/${r.id}','Rule')">Del</button></div></div>
       <div class="meta">${esc((r.content||'').slice(0,120))}</div></div>`).join(''):'<p class="muted">No rules yet</p>');});
   // Redeem list
+  db.ref('settings/redeemItems').off();
   db.ref('settings/redeemItems').on('value',s=>{const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
     $('redeemList').innerHTML=(list.length?'<div class="listcount">🛒 Total Items: '+list.length+'</div>':'')+(list.length?list.map((it,i)=>`<div class="item"><div class="h"><b><span class="serial">#${i+1}</span> ${esc(it.name)} — ${it.coins} coins</b>
       <button class="btn red sm" onclick="delNode('settings/redeemItems/${it.id}','Item')">Del</button></div></div>`).join(''):'<p class="muted">No items yet</p>');});
