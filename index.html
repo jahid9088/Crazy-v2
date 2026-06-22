@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRAZY E-SPROTS Admin</title>
+<style>
+:root{
+  --bg:#0a0d12;--panel:#12171f;--card:#171d27;--line:#262e3a;
+  --blue:#1f9bf0;--green:#22c55e;--red:#ef4444;--gold:#f5b50a;--pink:#d6206b;
+  --txt:#e8edf3;--muted:#8a94a3;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Roboto,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--txt);min-height:100vh}
+img{max-width:100%;display:block}
+input,select,textarea,button{font-family:inherit;outline:none;border:none;font-size:14px}
+.hide{display:none!important}
+
+/* login */
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login .box{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:32px 26px}
+.login h1{text-align:center;font-size:24px;margin-bottom:6px}
+.login p{text-align:center;color:var(--muted);margin-bottom:24px;font-size:13px}
+
+.fld{width:100%;background:#0e131b;border:1px solid #2c3542;border-radius:12px;padding:13px 14px;color:var(--txt);margin-bottom:14px}
+.fld:focus{border-color:var(--blue)}
+textarea.fld{min-height:90px;resize:vertical;line-height:1.5}
+label.lab{display:block;font-size:13px;font-weight:700;color:#aeb6c1;margin:10px 2px 6px}
+.btn{border-radius:12px;padding:13px 18px;font-weight:800;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.btn.blue{background:var(--blue)}.btn.green{background:var(--green)}.btn.red{background:var(--red)}
+.btn.gold{background:var(--gold);color:#3a2a00}.btn.grey{background:#2a313c;color:#cfd6df}.btn.pink{background:var(--pink)}
+.btn.sm{width:auto;padding:8px 14px;font-size:13px;border-radius:9px}
+
+/* shell */
+.top{position:sticky;top:0;z-index:50;background:var(--blue);padding:14px 16px;display:flex;align-items:center;gap:12px}
+.top .lg{width:40px;height:40px;border-radius:50%;background:#000;display:flex;align-items:center;justify-content:center;font-size:22px}
+.top h1{font-size:18px;color:#fff;flex:1}
+.top .out{color:#fff;font-size:13px;font-weight:700;cursor:pointer;background:#0003;padding:7px 12px;border-radius:8px}
+.tabbar{display:flex;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:68px;z-index:49}
+.tabbar::-webkit-scrollbar{display:none}
+.tabbar .tb{padding:14px 16px;white-space:nowrap;color:var(--muted);font-weight:700;font-size:14px;cursor:pointer;border-bottom:2px solid transparent}
+.tabbar .tb.on{color:#fff;border-bottom-color:var(--blue)}
+.wrap{padding:16px;max-width:760px;margin:0 auto}
+.page{display:none}.page.on{display:block;animation:f .2s}
+@keyframes f{from{opacity:0}to{opacity:1}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h3{font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .fld{flex:1;min-width:120px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.muted{color:var(--muted);font-size:13px}
+.pill{display:inline-block;font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px}
+.pill.on{background:#10301a;color:var(--green)}.pill.off{background:#3a1414;color:#ff7a7a}
+.pill.pend{background:#3a2e10;color:var(--gold)}
+
+.item{background:#0e131b;border:1px solid #222a35;border-radius:12px;padding:13px;margin-bottom:10px}
+.item .h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.item .h b{font-size:15px}
+.item .meta{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.5}
+.item .acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.thumb{width:100%;height:120px;object-fit:cover;border-radius:10px;background:#0a0d12;margin-bottom:10px}
+.toggle{width:48px;height:26px;border-radius:20px;background:#2a313c;position:relative;cursor:pointer;flex-shrink:0}
+.toggle.on{background:var(--green)}
+.toggle i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.toggle.on i{left:25px}
+.upbox{border:1.5px dashed #3a4452;border-radius:12px;padding:18px;text-align:center;color:var(--muted);cursor:pointer;margin-bottom:10px}
+.upbox.has{border-color:var(--green);color:var(--green)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222a35;color:#fff;padding:13px 22px;border-radius:30px;font-weight:700;z-index:400;opacity:0;transition:.3s}
+.toast.show{opacity:1;bottom:34px}
+.ovl{position:fixed;inset:0;background:#000c;z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+.ovl.show{display:flex}
+.modal{width:100%;max-width:540px;max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px}
+.modal h2{font-size:19px;margin-bottom:16px}
+.stat{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat .s{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+.stat .s .n{font-size:22px;font-weight:800}.stat .s .l{font-size:11px;color:var(--muted);margin-top:3px}
+.empty{text-align:center;color:#5f6b7a;padding:40px 20px}
+.spinner{width:36px;height:36px;border:4px solid #2a313c;border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite;margin:24px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+hr{border:none;border-top:1px solid var(--line);margin:14px 0}
+.kv{display:flex;justify-content:space-between;padding:6px 0;font-size:14px}.kv span{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="login">
+  <div class="box">
+    <h1>🔥 CRAZY E-SPROTS Admin</h1>
+    <p>Sign in with admin account</p>
+    <input class="fld" id="aEmail" type="email" placeholder="Admin email">
+    <input class="fld" id="aPass" type="password" placeholder="Password">
+    <button class="btn blue" onclick="adminLogin()">Login</button>
+    <p style="margin-top:14px;font-size:12px">First time? Set <b>admins/{uid}=true</b> in DB for your account.</p>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div id="shell" class="hide">
+  <div class="top">
+    <div class="lg">🔥</div><h1>Admin Panel</h1>
+    <div class="out" onclick="adminLogout()">Logout</div>
+  </div>
+  <div class="tabbar" id="tabbar">
+    <div class="tb on" data-p="dash" onclick="tab('dash')">Dashboard</div>
+    <div class="tb" data-p="games" onclick="tab('games')">Games</div>
+    <div class="tb" data-p="tours" onclick="tab('tours')">Tournaments</div>
+    <div class="tb" data-p="rooms" onclick="tab('rooms')">Room ID</div>
+    <div class="tb" data-p="banners" onclick="tab('banners')">Banners</div>
+    <div class="tb" data-p="videos" onclick="tab('videos')">Videos</div>
+    <div class="tb" data-p="gifts" onclick="tab('gifts')">Gift Codes</div>
+    <div class="tb" data-p="deps" onclick="tab('deps')">Deposits</div>
+    <div class="tb" data-p="wds" onclick="tab('wds')">Withdrawals</div>
+    <div class="tb" data-p="users" onclick="tab('users')">Users</div>
+    <div class="tb" data-p="spam" onclick="tab('spam')">Spam/Devices</div>
+    <div class="tb" data-p="broad" onclick="tab('broad')">Broadcast</div>
+    <div class="tb" data-p="content" onclick="tab('content')">Content</div>
+    <div class="tb" data-p="settings" onclick="tab('settings')">Settings</div>
+  </div>
+  <div class="wrap">
+    <div class="page on" id="p-dash"></div>
+    <div class="page" id="p-games"></div>
+    <div class="page" id="p-tours"></div>
+    <div class="page" id="p-rooms"></div>
+    <div class="page" id="p-banners"></div>
+    <div class="page" id="p-videos"></div>
+    <div class="page" id="p-gifts"></div>
+    <div class="page" id="p-deps"></div>
+    <div class="page" id="p-wds"></div>
+    <div class="page" id="p-users"></div>
+    <div class="page" id="p-spam"></div>
+    <div class="page" id="p-broad"></div>
+    <div class="page" id="p-content"></div>
+    <div class="page" id="p-settings"></div>
+  </div>
+</div>
+
+<div class="ovl" id="ovl"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyC4aG-oTpd5afBhbhvfxv83P4MXt7-1les",
+  authDomain: "funtoolshopv2.firebaseapp.com",
+  databaseURL: "https://funtoolshopv2-default-rtdb.firebaseio.com",
+  projectId: "funtoolshopv2",
+  storageBucket: "funtoolshopv2.firebasestorage.app",
+  messagingSenderId: "814075381021",
+  appId: "1:814075381021:android:7f2a7806122685fc974df4"
+};
+const IMGBB_KEY = "6187c7c20e3ef0237f31bf53aa8b421c";
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(), db=firebase.database();
+
+const $=id=>document.getElementById(id);
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function esc(s){return (s||'').toString().replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
+function fmt(ts){if(!ts)return '';return new Date(ts).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
+function modal(h){$('modal').innerHTML=h;$('ovl').classList.add('show');}
+function closeModal(){$('ovl').classList.remove('show');}
+$('ovl').addEventListener('click',e=>{if(e.target.id==='ovl')closeModal();});
+
+/* ---------- ImgBB upload ---------- */
+async function uploadImg(file){
+  const fd=new FormData(); fd.append('image',file);
+  const r=await fetch('https://api.imgbb.com/1/upload?key='+IMGBB_KEY,{method:'POST',body:fd});
+  const j=await r.json();
+  if(j.success)return j.data.url;
+  throw new Error('Upload failed');
+}
+function imgInput(id,cb){
+  return `<div class="upbox" id="ub_${id}" onclick="document.getElementById('fi_${id}').click()">📷 Tap to upload image</div>
+    <input type="file" id="fi_${id}" accept="image/*" class="hide">
+    <input type="hidden" id="${id}">`;
+}
+function bindImg(id){
+  const fi=$('fi_'+id); if(!fi)return;
+  fi.onchange=async()=>{
+    if(!fi.files[0])return;
+    const ub=$('ub_'+id); ub.textContent='Uploading...';
+    try{const url=await uploadImg(fi.files[0]); $(id).value=url; ub.textContent='✓ Uploaded';ub.classList.add('has');
+      ub.insertAdjacentHTML('beforeend',`<img src="${url}" style="height:60px;margin:8px auto 0;border-radius:8px">`);
+    }catch(e){ub.textContent='Upload failed, try again';}
+  };
+}
+
+/* ---------- AUTH ---------- */
+async function adminLogin(){
+  try{
+    const c=await auth.signInWithEmailAndPassword($('aEmail').value.trim(),$('aPass').value);
+    const ok=await db.ref('admins/'+c.user.uid).once('value');
+    if(!ok.val()){await auth.signOut();return toast('Not an admin account');}
+  }catch(e){toast(e.message);}
+}
+function adminLogout(){auth.signOut();}
+auth.onAuthStateChanged(async u=>{
+  if(u){
+    const ok=await db.ref('admins/'+u.uid).once('value');
+    if(ok.val()){$('login').classList.add('hide');$('shell').classList.remove('hide');tab('dash');}
+    else{$('login').classList.remove('hide');$('shell').classList.add('hide');}
+  }else{$('login').classList.remove('hide');$('shell').classList.add('hide');}
+});
+
+/* ---------- TABS ---------- */
+function tab(p){
+  document.querySelectorAll('.tb').forEach(t=>t.classList.toggle('on',t.dataset.p===p));
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('on'));
+  $('p-'+p).classList.add('on');
+  ({dash:renderDash,games:renderGames,tours:renderTours,rooms:renderRooms,banners:renderBanners,
+    videos:renderVideos,gifts:renderGifts,deps:renderDeps,wds:renderWds,users:renderUsers,
+    spam:renderSpam,broad:renderBroad,content:renderContent,settings:renderSettings}[p])();
+}
+
+/* ========== DASHBOARD ========== */
+async function renderDash(){
+  $('p-dash').innerHTML='<div class="spinner"></div>';
+  const [u,d,w,g]=await Promise.all([
+    db.ref('users').once('value'),db.ref('deposits').once('value'),
+    db.ref('withdrawals').once('value'),db.ref('games').once('value')]);
+  let users=0,pendDep=0,pendWd=0,games=0,totalBal=0;
+  u.forEach(c=>{users++;const x=c.val();totalBal+=(x.playCoin||0)+(x.winnings||0)+(x.referralReward||0)+(x.bonusReward||0)+(x.balance||0);});
+  d.forEach(c=>{if(c.val().status==='pending')pendDep++;});
+  w.forEach(c=>{if(c.val().status==='pending')pendWd++;});
+  g.forEach(()=>games++);
+  $('p-dash').innerHTML=`
+    <div class="stat">
+      <div class="s"><div class="n">${users}</div><div class="l">Users</div></div>
+      <div class="s"><div class="n">${games}</div><div class="l">Games</div></div>
+      <div class="s"><div class="n" style="color:var(--gold)">${pendDep}</div><div class="l">Pending Dep</div></div>
+      <div class="s"><div class="n" style="color:var(--pink)">${pendWd}</div><div class="l">Pending WD</div></div>
+    </div>
+    <div class="card"><h3>💰 Economy</h3>
+      <div class="kv"><span>Total user balance</span><b>${totalBal.toFixed(2)} coins</b></div>
+      <div class="kv"><span>Min deposit</span><b>₹${(window._set&&_set.minDeposit)||10}</b></div>
+      <div class="kv"><span>Min / Max withdraw</span><b>₹${(window._set&&_set.minWithdraw)||50} / ₹${(window._set&&_set.maxWithdraw)||5000}</b></div>
+    </div>
+    <div class="card"><h3>⚡ Quick Actions</h3>
+      <div class="row">
+        <button class="btn green sm" onclick="tab('tours')">+ New Tournament</button>
+        <button class="btn gold sm" onclick="tab('gifts')">+ Gift Code</button>
+        <button class="btn blue sm" onclick="tab('broad')">Send Broadcast</button>
+        <button class="btn pink sm" onclick="tab('deps')">Review Deposits</button>
+      </div>
+    </div>`;
+}
+
+/* ========== GAMES (on/off) ========== */
+function renderGames(){
+  $('p-games').innerHTML=`<button class="btn green" onclick="gameForm()">+ Add Game</button><div id="gameList" style="margin-top:14px"><div class="spinner"></div></div>`;
+  db.ref('games').on('value',s=>{
+    const list=[]; s.forEach(c=>list.push({id:c.key,...c.val()}));
+    list.sort((a,b)=>(a.order||0)-(b.order||0));
+    $('gameList').innerHTML=list.map(g=>`
+      <div class="item">
+        <div class="h">
+          <div style="display:flex;gap:12px;align-items:center">
+            ${g.img?`<img src="${g.img}" style="width:50px;height:50px;border-radius:10px;object-fit:cover">`:''}
+            <div><b>${esc(g.name)}</b><div class="meta">Order: ${g.order||0} • <span class="pill ${g.active===false?'off':'on'}">${g.active===false?'OFFLINE':'LIVE'}</span></div></div>
+          </div>
+          <div class="toggle ${g.active===false?'':'on'}" onclick="toggleGame('${g.id}',${g.active!==false})"><i></i></div>
+        </div>
+        <div class="acts">
+          <button class="btn grey sm" onclick='gameForm(${JSON.stringify(g).replace(/'/g,"&#39;")})'>Edit</button>
+          <button class="btn red sm" onclick="delNode('games/${g.id}','Game')">Delete</button>
+        </div>
+      </div>`).join('') || '<div class="empty">No games yet</div>';
+  });
+}
+function toggleGame(id,cur){db.ref('games/'+id+'/active').set(!cur);toast(cur?'Game OFF':'Game ON');}
+function gameForm(g){
+  g=g||{};
+  modal(`<h2>${g.id?'Edit':'Add'} Game</h2>
+    <label class="lab">Game name (e.g. BATTLE ROYALE)</label>
+    <input class="fld" id="gName" value="${esc(g.name||'')}">
+    <label class="lab">Display order</label>
+    <input class="fld" id="gOrder" type="number" value="${g.order||0}">
+    <label class="lab">Game tile image</label>
+    ${imgInput('gImg')}
+    <div class="row" style="margin-top:14px">
+      <button class="btn green" onclick="saveGame('${g.id||''}')">Save</button>
+      <button class="btn grey" onclick="closeModal()">Cancel</button>
+    </div>`);
+  bindImg('gImg'); if(g.img)$('gImg').value=g.img;
+}
+async function saveGame(id){
+  const data={name:$('gName').value.trim(),order:+$('gOrder').value||0,img:$('gImg').value,active:true};
+  if(!data.name)return toast('Name daalo');
+  if(id)await db.ref('games/'+id).update(data);
+  else await db.ref('games').push(data);
+  closeModal();toast('Saved ✓');
+}
+
+/* ========== TOURNAMENTS ========== */
+let _gamesCache={};
+function renderTours(){
+  db.ref('games').once('value').then(s=>{_gamesCache={};s.forEach(c=>_gamesCache[c.key]=c.val());
+    const opts=Object.entries(_gamesCache).map(([id,g])=>`<option value="${id}">${esc(g.name)}</option>`).join('');
+    $('p-tours').innerHTML=`
+      <div class="card"><h3>📋 Select Game</h3>
+        <select class="fld" id="tourGame" onchange="loadTours()"><option value="">-- choose game --</option>${opts}</select>
+        <button class="btn green" onclick="tourForm()" style="margin-top:10px">+ New Tournament</button>
+      </div>
+      <div id="tourList"></div>`;
+  });
+}
+function loadTours(){
+  const gid=$('tourGame').value; if(!gid){$('tourList').innerHTML='';return;}
+  $('tourList').innerHTML='<div class="spinner"></div>';
+  db.ref('tournaments/'+gid).on('value',s=>{
+    const list=[]; s.forEach(c=>list.push({id:c.key,...c.val()}));
+    list.sort((a,b)=>(b.startAt||0)-(a.startAt||0));
+    $('tourList').innerHTML=list.map(t=>{
+      const joined=t.slotsTaken?Object.keys(t.slotsTaken).length:0;
+      return `<div class="item">
+        ${t.banner?`<img class="thumb" src="${t.banner}">`:''}
+        <div class="h"><div><b>${esc(t.title)}</b>
+          <div class="meta">${fmt(t.startAt)} • ${(t.type||'solo').toUpperCase()} • ${joined}/${t.totalSlots||48} joined • <span class="pill ${t.status==='complete'?'off':'on'}">${(t.status||'upcoming').toUpperCase()}</span></div></div></div>
+        <div class="acts">
+          <button class="btn grey sm" onclick='tourForm("${gid}",${JSON.stringify(t).replace(/'/g,"&#39;")})'>Edit</button>
+          <button class="btn blue sm" onclick="setStatus('${gid}','${t.id}','ongoing')">Set Ongoing</button>
+          <button class="btn gold sm" onclick="resultForm('${gid}','${t.id}',${JSON.stringify(t.slotsTaken||{}).replace(/'/g,"&#39;")})">Declare Result</button>
+          <button class="btn red sm" onclick="delNode('tournaments/${gid}/${t.id}','Tournament')">Delete</button>
+        </div>
+      </div>`;
+    }).join('') || '<div class="empty">No tournaments for this game</div>';
+  });
+}
+function setStatus(gid,id,st){db.ref('tournaments/'+gid+'/'+id+'/status').set(st);toast('Status: '+st);}
+function tourForm(gid,t){
+  gid=gid||$('tourGame').value; t=t||{};
+  if(!gid)return toast('Pehle game select karo');
+  modal(`<h2>${t.id?'Edit':'New'} Tournament</h2>
+    <label class="lab">Title</label><input class="fld" id="tTitle" value="${esc(t.title||'')}" placeholder="🎉 Solo vs Solo Battle Royale Match 🏆 #5222">
+    <div class="grid2">
+      <div><label class="lab">Type</label><select class="fld" id="tType">
+        <option value="solo" ${t.type==='solo'?'selected':''}>Solo</option>
+        <option value="duo" ${t.type==='duo'?'selected':''}>Duo</option>
+        <option value="squad" ${t.type==='squad'?'selected':''}>Squad</option></select></div>
+      <div><label class="lab">Total slots</label><input class="fld" id="tSlots" type="number" value="${t.totalSlots||48}"></div>
+    </div>
+    <div class="grid2">
+      <div><label class="lab">Start date & time</label><input class="fld" id="tStart" type="datetime-local" value="${t.startAt?new Date(t.startAt-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16):''}"></div>
+      <div><label class="lab">Status</label><select class="fld" id="tStatus">
+        <option value="upcoming" ${t.status==='upcoming'||!t.status?'selected':''}>Upcoming</option>
+        <option value="ongoing" ${t.status==='ongoing'?'selected':''}>Ongoing</option>
+        <option value="complete" ${t.status==='complete'?'selected':''}>Complete</option></select></div>
+    </div>
+    <div class="grid2">
+      <div><label class="lab">Prize Pool</label><input class="fld" id="tPrize" type="number" value="${t.prizePool||0}"></div>
+      <div><label class="lab">Entry Fee (0=free)</label><input class="fld" id="tFee" type="number" value="${t.entryFee||0}"></div>
+    </div>
+    <div class="grid2">
+      <div><label class="lab">Per Kill</label><input class="fld" id="tKill" type="number" value="${t.perKill||0}"></div>
+      <div><label class="lab">Map</label><input class="fld" id="tMap" value="${esc(t.map||'BERMUDA')}"></div>
+    </div>
+    <div class="grid2">
+      <div><label class="lab">Version</label><input class="fld" id="tVer" value="${esc(t.version||'BATTLE ROYALE')}"></div>
+      <div><label class="lab">Sponsor</label><input class="fld" id="tSpon" value="${esc(t.sponsor||'Not Sponsored')}"></div>
+    </div>
+    <label class="lab">Prize note (e.g. Booyah Prize 45 coin)</label><input class="fld" id="tPnote" value="${esc(t.prizeNote||'')}">
+    <label class="lab">Rules</label><textarea class="fld" id="tRules" placeholder="Tournament rules...">${esc(t.rules||'• Follow fair play guidelines\n• No cheating or hacking\n• Respect other players\n• Tournament admin decisions are final')}</textarea>
+    <label class="lab">Live link (YouTube etc.)</label><input class="fld" id="tLive" value="${esc(t.liveLink||'')}" placeholder="https://youtube.com/...">
+    <label class="lab">Result video link</label><input class="fld" id="tResult" value="${esc(t.resultLink||'')}">
+    <label class="lab">Banner image</label>${imgInput('tBanner')}
+    <div class="row" style="margin-top:14px">
+      <button class="btn green" onclick="saveTour('${gid}','${t.id||''}')">Save</button>
+      <button class="btn grey" onclick="closeModal()">Cancel</button>
+    </div>`);
+  bindImg('tBanner'); if(t.banner)$('tBanner').value=t.banner;
+}
+async function saveTour(gid,id){
+  const startAt=$('tStart').value?new Date($('tStart').value).getTime():Date.now()+3600000;
+  const data={
+    title:$('tTitle').value.trim(),type:$('tType').value,totalSlots:+$('tSlots').value||48,
+    startAt,status:$('tStatus').value,prizePool:+$('tPrize').value||0,entryFee:+$('tFee').value||0,
+    perKill:+$('tKill').value||0,map:$('tMap').value,version:$('tVer').value,sponsor:$('tSpon').value,
+    prizeNote:$('tPnote').value,rules:$('tRules').value,liveLink:$('tLive').value,resultLink:$('tResult').value,
+    banner:$('tBanner').value
+  };
+  if(!data.title)return toast('Title daalo');
+  if(id)await db.ref('tournaments/'+gid+'/'+id).update(data);
+  else{
+    const key=db.ref('tournaments/'+gid).push().key;
+    await db.ref('tournaments/'+gid+'/'+key).set(data);
+    // auto-notify users who joined this game's other matches? -> notify on match-ready handled in Rooms
+  }
+  closeModal();toast('Saved ✓');
+}
+/* declare result -> pay winners */
+function resultForm(gid,id,slots){
+  const players=Object.values(slots||{}).reduce((a,s)=>{if(!a.find(x=>x.uid===s.uid))a.push(s);return a;},[]);
+  modal(`<h2>🏆 Declare Result</h2>
+    <p class="muted" style="margin-bottom:12px">Winner ko prize amount do. Yeh amount turant user wallet me add hoga.</p>
+    ${players.map((p,i)=>`
+      <div class="grid2" style="margin-bottom:8px;align-items:center">
+        <div><b>${esc(p.ffName||p.name)}</b><div class="meta">${esc(p.name)} • UID:${esc(p.ffUid||'')}</div>
+          <input type="hidden" class="winUid" value="${p.uid}"><input type="hidden" class="winName" value="${esc(p.name)}"></div>
+        <input class="fld winAmt" type="number" placeholder="Prize coins" value="0">
+      </div>`).join('') || '<div class="empty">No players joined</div>'}
+    <div class="row" style="margin-top:14px">
+      <button class="btn gold" onclick="payWinners('${gid}','${id}')">Pay & Complete</button>
+      <button class="btn grey" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+async function payWinners(gid,id){
+  const uids=[...document.querySelectorAll('.winUid')].map(x=>x.value);
+  const names=[...document.querySelectorAll('.winName')].map(x=>x.value);
+  const amts=[...document.querySelectorAll('.winAmt')].map(x=>+x.value||0);
+  const winners={};
+  for(let i=0;i<uids.length;i++){
+    if(amts[i]>0){
+      const cur=(await db.ref('users/'+uids[i]+'/winnings').once('value')).val()||0;
+      await db.ref('users/'+uids[i]+'/winnings').set(cur+amts[i]);
+      await db.ref('transactions/'+uids[i]).push({type:'credit',dir:'credit',amount:amts[i],note:'Tournament prize (winnings)',badge:'ok',at:Date.now()});
+      await db.ref('notifications/'+uids[i]).push({title:'🏆 You won!',body:`${amts[i]} coins prize tumhare wallet me add ho gaye!`,at:Date.now(),read:false});
+      winners['w'+i]={uid:uids[i],name:names[i],prize:amts[i]};
+    }
+  }
+  await db.ref('tournaments/'+gid+'/'+id+'/winners').set(winners);
+  await db.ref('tournaments/'+gid+'/'+id+'/status').set('complete');
+  closeModal();toast('Winners paid ✓');
+}
+
+/* ========== ROOM ID push (auto-notify) ========== */
+function renderRooms(){
+  db.ref('games').once('value').then(s=>{
+    const opts=[];s.forEach(c=>opts.push(`<option value="${c.key}">${esc(c.val().name)}</option>`));
+    $('p-rooms').innerHTML=`<div class="card"><h3>🔑 Push Room ID & Password</h3>
+      <p class="muted" style="margin-bottom:12px">Room ID set karte hi sab joined users ko auto notification jayega.</p>
+      <select class="fld" id="rGame" onchange="loadRoomTours()"><option value="">-- game --</option>${opts.join('')}</select>
+      <div id="roomTourBox"></div></div>`;
+  });
+}
+function loadRoomTours(){
+  const gid=$('rGame').value; if(!gid){$('roomTourBox').innerHTML='';return;}
+  db.ref('tournaments/'+gid).once('value').then(s=>{
+    const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
+    list.sort((a,b)=>(a.startAt||0)-(b.startAt||0));
+    $('roomTourBox').innerHTML=list.map(t=>{
+      const joined=t.slotsTaken?Object.keys(t.slotsTaken).length:0;
+      return `<div class="item">
+        <b>${esc(t.title)}</b><div class="meta">${fmt(t.startAt)} • ${joined} joined</div>
+        <div class="grid2" style="margin-top:10px">
+          <input class="fld" id="rid_${t.id}" placeholder="Room ID" value="${esc(t.roomId||'')}">
+          <input class="fld" id="rpw_${t.id}" placeholder="Password" value="${esc(t.roomPass||'')}">
+        </div>
+        <div class="acts">
+          <button class="btn green sm" onclick="pushRoom('${gid}','${t.id}')">Save & Notify Users</button>
+          <button class="btn blue sm" onclick="notifyStart('${gid}','${t.id}')">Send 'Match Starting' Alert</button>
+        </div>
+      </div>`;
+    }).join('') || '<div class="empty">No tournaments</div>';
+  });
+}
+async function pushRoom(gid,id){
+  const rid=$('rid_'+id).value.trim(), rpw=$('rpw_'+id).value.trim();
+  if(!rid&&!rpw)return toast('Room ID ya password daalo');
+  await db.ref('tournaments/'+gid+'/'+id).update({roomId:rid,roomPass:rpw});
+  const t=(await db.ref('tournaments/'+gid+'/'+id).once('value')).val();
+  const uids=uniqueUids(t.slotsTaken);
+  for(const uid of uids){
+    await db.ref('notifications/'+uid).push({
+      title:'🔑 Room ID & Password Ready!',
+      body:`${t.title} — Room ID: ${rid} | Password: ${rpw}. Tap to view.`,
+      gid,mid:id,type:'room',at:Date.now(),read:false
+    });
+  }
+  toast('Room pushed + '+uids.length+' users notified ✓');
+}
+async function notifyStart(gid,id){
+  const t=(await db.ref('tournaments/'+gid+'/'+id).once('value')).val();
+  const uids=uniqueUids(t.slotsTaken);
+  for(const uid of uids){
+    await db.ref('notifications/'+uid).push({
+      title:'⚡ Match Starting Soon!',body:`${t.title} jald start hoga. Ready ho jao, room join karo!`,
+      gid,mid:id,type:'start',at:Date.now(),read:false});
+  }
+  toast(uids.length+' users notified ✓');
+}
+function uniqueUids(slots){
+  const set=new Set(); Object.values(slots||{}).forEach(s=>s.uid&&set.add(s.uid)); return [...set];
+}
+
+/* ========== BANNERS ========== */
+function renderBanners(){
+  $('p-banners').innerHTML=`<button class="btn green" onclick="bannerForm()">+ Add Banner</button><div id="banList" style="margin-top:14px"></div>`;
+  db.ref('settings/banners').on('value',s=>{
+    const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
+    $('banList').innerHTML=list.map(b=>`
+      <div class="item"><img class="thumb" src="${b.img}">
+        <div class="meta">Link: ${esc(b.link||'none')}</div>
+        <div class="acts"><button class="btn red sm" onclick="delNode('settings/banners/${b.id}','Banner')">Delete</button></div>
+      </div>`).join('') || '<div class="empty">No banners</div>';
+  });
+}
+function bannerForm(){
+  modal(`<h2>Add Banner</h2>${imgInput('bImg')}
+    <label class="lab">Link on tap (optional)</label><input class="fld" id="bLink" placeholder="https://...">
+    <div class="row" style="margin-top:14px"><button class="btn green" onclick="saveBanner()">Save</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
+  bindImg('bImg');
+}
+async function saveBanner(){
+  if(!$('bImg').value)return toast('Image upload karo');
+  await db.ref('settings/banners').push({img:$('bImg').value,link:$('bLink').value.trim()});
+  closeModal();toast('Saved ✓');
+}
+
+/* ========== VIDEOS ========== */
+function renderVideos(){
+  $('p-videos').innerHTML=`<button class="btn green" onclick="videoForm()">+ Add Video</button><div id="vidList" style="margin-top:14px"></div>`;
+  db.ref('videos').on('value',s=>{
+    const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
+    $('vidList').innerHTML=list.map(v=>`
+      <div class="item">${v.thumb?`<img class="thumb" src="${v.thumb}">`:''}
+        <b>${esc(v.title)}</b><div class="meta">${esc(v.link)}</div>
+        <div class="acts"><button class="btn red sm" onclick="delNode('videos/${v.id}','Video')">Delete</button></div>
+      </div>`).join('') || '<div class="empty">No videos</div>';
+  });
+}
+function videoForm(){
+  modal(`<h2>Add Video</h2>
+    <label class="lab">Title</label><input class="fld" id="vTitle">
+    <label class="lab">YouTube / video link</label><input class="fld" id="vLink" placeholder="https://youtube.com/...">
+    <label class="lab">Thumbnail</label>${imgInput('vThumb')}
+    <div class="row" style="margin-top:14px"><button class="btn green" onclick="saveVideo()">Save</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
+  bindImg('vThumb');
+}
+async function saveVideo(){
+  if(!$('vTitle').value||!$('vLink').value)return toast('Title aur link daalo');
+  await db.ref('videos').push({title:$('vTitle').value,link:$('vLink').value,thumb:$('vThumb').value});
+  closeModal();toast('Saved ✓');
+}
+
+/* ========== GIFT CODES ========== */
+function renderGifts(){
+  $('p-gifts').innerHTML=`<button class="btn gold" onclick="giftForm()">+ Create Gift Code</button><div id="giftList" style="margin-top:14px"></div>`;
+  db.ref('giftCodes').on('value',s=>{
+    const list=[];s.forEach(c=>list.push({code:c.key,...c.val()}));
+    $('giftList').innerHTML=list.map(g=>{
+      const used=g.claimedBy?Object.keys(g.claimedBy).length:0;
+      return `<div class="item"><div class="h"><div>
+        <b style="letter-spacing:1px">${esc(g.code)}</b>
+        <div class="meta">${g.amount} coins • ${used}/${g.maxClaims||'∞'} claimed • ${g.minDeposit?'Min deposit ₹'+g.minDeposit:'No deposit needed'} • <span class="pill ${g.active===false?'off':'on'}">${g.active===false?'OFF':'ON'}</span></div></div>
+        <div class="toggle ${g.active===false?'':'on'}" onclick="db.ref('giftCodes/${g.code}/active').set(${g.active===false})"><i></i></div></div>
+        <div class="acts"><button class="btn red sm" onclick="delNode('giftCodes/${g.code}','Gift code')">Delete</button></div>
+      </div>`;
+    }).join('') || '<div class="empty">No gift codes</div>';
+  });
+}
+function giftForm(){
+  modal(`<h2>Create Gift Code</h2>
+    <label class="lab">Code (uppercase)</label><input class="fld" id="gCode" placeholder="FIRE100" style="text-transform:uppercase">
+    <div class="grid2">
+      <div><label class="lab">Reward coins</label><input class="fld" id="gAmt" type="number" value="10"></div>
+      <div><label class="lab">Max claims (0=∞)</label><input class="fld" id="gMax" type="number" value="0"></div>
+    </div>
+    <label class="lab">Min deposit required to claim (₹, 0=none)</label><input class="fld" id="gMin" type="number" value="0">
+    <div class="row" style="margin-top:14px"><button class="btn gold" onclick="saveGift()">Create</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
+}
+async function saveGift(){
+  const code=$('gCode').value.trim().toUpperCase();
+  if(!code)return toast('Code daalo');
+  await db.ref('giftCodes/'+code).set({
+    amount:+$('gAmt').value||0,maxClaims:+$('gMax').value||0,minDeposit:+$('gMin').value||0,active:true,createdAt:Date.now()});
+  closeModal();toast('Gift code created ✓');
+}
+
+/* ========== DEPOSITS ========== */
+function renderDeps(){
+  $('p-deps').innerHTML='<div class="spinner"></div>';
+  db.ref('deposits').orderByChild('at').on('value',s=>{
+    const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));list.reverse();
+    $('p-deps').innerHTML=list.map(d=>`
+      <div class="item"><div class="h"><div>
+        <b>₹${d.amount} — ${esc(d.name)}</b>
+        <div class="meta">${esc(d.email)} • ${esc(d.phone||'')}<br>Ref/UTR: ${esc(d.ref||'-')} • ${fmt(d.at)}</div></div>
+        <span class="pill ${d.status==='approved'?'on':d.status==='rejected'?'off':'pend'}">${(d.status||'pending').toUpperCase()}</span></div>
+        ${d.status==='pending'?`<div class="acts">
+          <button class="btn green sm" onclick="approveDep('${d.id}','${d.uid}',${d.amount})">Approve</button>
+          <button class="btn red sm" onclick="rejectDep('${d.id}','${d.uid}')">Reject</button></div>`:''}
+      </div>`).join('') || '<div class="empty">No deposits</div>';
+  });
+}
+async function approveDep(id,uid,amount){
+  const cur=(await db.ref('users/'+uid+'/playCoin').once('value')).val()||0;
+  const depTot=(await db.ref('users/'+uid+'/depositTotal').once('value')).val()||0;
+  await db.ref('users/'+uid+'/playCoin').set(cur+amount);
+  await db.ref('users/'+uid+'/depositTotal').set(depTot+amount);
+  // rebate: deposit amount = required tournaments to play
+  const reqCur=(await db.ref('users/'+uid+'/rebateRequired').once('value')).val()||0;
+  await db.ref('users/'+uid+'/rebateRequired').set(reqCur+Math.floor(amount));
+  await db.ref('deposits/'+id+'/status').set('approved');
+  await db.ref('notifications/'+uid).push({title:'✅ Deposit Approved',body:`₹${amount} coins added. Withdrawal unlock ke liye ${Math.floor(amount)} tournament khelo (rebate).`,at:Date.now(),read:false});
+  toast('Approved + rebate set ✓');
+}
+async function rejectDep(id,uid){
+  await db.ref('deposits/'+id+'/status').set('rejected');
+  await db.ref('notifications/'+uid).push({title:'❌ Deposit Rejected',body:'Tumhara deposit request reject ho gaya. Support se contact karo.',at:Date.now(),read:false});
+  toast('Rejected');
+}
+
+/* ========== WITHDRAWALS ========== */
+function renderWds(){
+  $('p-wds').innerHTML='<div class="spinner"></div>';
+  db.ref('withdrawals').orderByChild('at').on('value',s=>{
+    const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));list.reverse();
+    $('p-wds').innerHTML=list.map(w=>`
+      <div class="item"><div class="h"><div>
+        <b>₹${w.amount} — ${esc(w.name)}</b>
+        <div class="meta">UPI: ${esc(w.upi)} • ${esc(w.email)}<br>${fmt(w.at)}</div></div>
+        <span class="pill ${w.status==='approved'?'on':w.status==='rejected'?'off':'pend'}">${(w.status||'pending').toUpperCase()}</span></div>
+        ${w.status==='pending'?`<div class="acts">
+          <button class="btn green sm" onclick="approveWd('${w.id}','${w.uid}',${w.amount})">Mark Paid</button>
+          <button class="btn red sm" onclick="rejectWd('${w.id}','${w.uid}',${w.amount})">Reject & Refund</button></div>`:''}
+      </div>`).join('') || '<div class="empty">No withdrawals</div>';
+  });
+}
+async function approveWd(id,uid){
+  await db.ref('withdrawals/'+id+'/status').set('approved');
+  await db.ref('notifications/'+uid).push({title:'✅ Withdrawal Paid',body:'Tumhara withdrawal approve ho gaya, paisa bhej diya.',at:Date.now(),read:false});
+  toast('Marked paid ✓');
+}
+async function rejectWd(id,uid,amount){
+  // refund (balance was held on request)
+  const cur=(await db.ref('users/'+uid+'/balance').once('value')).val()||0;
+  await db.ref('users/'+uid+'/balance').set(cur+amount);
+  await db.ref('withdrawals/'+id+'/status').set('rejected');
+  await db.ref('notifications/'+uid).push({title:'❌ Withdrawal Rejected',body:`₹${amount} wapas wallet me add kar diya.`,at:Date.now(),read:false});
+  toast('Rejected + refunded ✓');
+}
+
+/* ========== USERS ========== */
+function renderUsers(){
+  $('p-users').innerHTML=`<input class="fld" id="uSearch" placeholder="Search name / email / phone" oninput="filterUsers()"><div id="userList"><div class="spinner"></div></div>`;
+  db.ref('users').on('value',s=>{
+    window._users=[];s.forEach(c=>window._users.push({uid:c.key,...c.val()}));
+    filterUsers();
+  });
+}
+function filterUsers(){
+  const q=($('uSearch').value||'').toLowerCase();
+  const list=(window._users||[]).filter(u=>!q||(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)||(u.phone||'').includes(q));
+  $('userList').innerHTML=list.map(u=>`
+    <div class="item"><div class="h"><div>
+      <b>${esc(u.name)} ${u.banned?'<span class="pill off">BANNED</span>':''}</b>
+      <div class="meta">${esc(u.email)} • ${esc(u.phone||'')}<br>FF: ${esc(u.ffName||'-')} (${esc(u.ffUid||'-')})<br>Play:${(u.playCoin||0).toFixed(0)} Win:${(u.winnings||0).toFixed(0)} Ref:${(u.referralReward||0).toFixed(0)} Bonus:${(u.bonusReward||0).toFixed(0)} • Played:${u.tournamentsPlayed||0}/${u.rebateRequired||0}<br>IP: ${esc(u.ip||'-')} • ${esc(u.model||'-')}</div></div></div>
+    <div class="acts">
+      <button class="btn blue sm" onclick="adjustBal('${u.uid}',${u.balance||0})">Adjust Balance</button>
+      <button class="btn ${u.banned?'green':'red'} sm" onclick="banUser('${u.uid}',${!!u.banned})">${u.banned?'Unban':'Ban'}</button>
+    </div></div>`).join('') || '<div class="empty">No users</div>';
+}
+function adjustBal(uid,cur){
+  modal(`<h2>Adjust Balance</h2>
+    <label class="lab">Bucket</label>
+    <select class="fld" id="abBucket"><option value="playCoin">Play Coin (deposit/entry)</option><option value="winnings">Winnings (withdrawable)</option><option value="referralReward">Referral Reward</option><option value="bonusReward">Bonus Reward</option></select>
+    <label class="lab">Amount to ADD (negative = deduct)</label><input class="fld" id="abVal" type="number" value="0">
+    <label class="lab">Note</label><input class="fld" id="abNote" placeholder="Manual adjustment">
+    <div class="row" style="margin-top:14px"><button class="btn green" onclick="saveBal('${uid}')">Apply</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
+}
+async function saveBal(uid){
+  const bucket=$('abBucket').value, delta=+$('abVal').value||0;
+  const cur=(await db.ref('users/'+uid+'/'+bucket).once('value')).val()||0;
+  const nv=Math.max(0,cur+delta);
+  await db.ref('users/'+uid+'/'+bucket).set(nv);
+  await db.ref('transactions/'+uid).push({type:delta>=0?'credit':'debit',dir:delta>=0?'credit':'debit',amount:Math.abs(delta),note:($('abNote').value||'Admin adjustment')+' ('+bucket+')',badge:'ok',at:Date.now()});
+  await db.ref('notifications/'+uid).push({title:'💼 Wallet Updated',body:(delta>=0?'+':'-')+Math.abs(delta)+' coins ('+bucket+') by admin.',at:Date.now(),read:false});
+  closeModal();toast('Wallet updated ✓');
+}
+function banUser(uid,isBanned){
+  if(isBanned){db.ref('users/'+uid+'/banned').set(false);toast('Unbanned ✓');return;}
+  modal(`<h2>Ban User</h2><label class="lab">Reason</label><input class="fld" id="banReason" placeholder="Multiple accounts / cheating">
+    <div class="row" style="margin-top:14px"><button class="btn red" onclick="doBan('${uid}')">Ban</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
+}
+async function doBan(uid){
+  await db.ref('users/'+uid).update({banned:true,banReason:$('banReason').value||'Policy violation'});
+  closeModal();toast('User banned ✓');
+}
+
+/* ========== SPAM / DEVICES ========== */
+function renderSpam(){
+  $('p-spam').innerHTML='<div class="spinner"></div>';
+  db.ref('devices').once('value').then(s=>{
+    const list=[];s.forEach(c=>{const accs=[];c.forEach(a=>accs.push(a.val()));list.push({fp:c.key,accs});});
+    const flagged=list.filter(d=>d.accs.length>1).sort((a,b)=>b.accs.length-a.accs.length);
+    $('p-spam').innerHTML=`
+      <div class="card"><h3>⚠️ Multi-Account Devices</h3>
+      <p class="muted">Same device fingerprint se multiple accounts. Limit settings me set hoti hai.</p></div>
+      ${flagged.map(d=>`<div class="item">
+        <b>Device: ${esc(d.fp)} <span class="pill off">${d.accs.length} accounts</span></b>
+        <div class="meta">${d.accs.map(a=>`${esc(a.email)} (${esc(a.phone||'-')}) IP:${esc(a.ip||'-')}`).join('<br>')}</div>
+      </div>`).join('') || '<div class="empty">No suspicious devices 👍</div>'}`;
+  });
+}
+
+/* ========== BROADCAST (custom dialog to all users) ========== */
+function renderBroad(){
+  $('p-broad').innerHTML=`
+    <div class="card"><h3>📣 Custom Dialog Broadcast</h3>
+    <p class="muted" style="margin-bottom:12px">Sab users ko ek custom popup dikhega (Reason / Message / OK / No Thanks).</p>
+    <label class="lab">Icon (emoji)</label><input class="fld" id="bcIcon" value="📣">
+    <label class="lab">Title</label><input class="fld" id="bcTitle" placeholder="Big Announcement">
+    <label class="lab">Reason (small highlight, optional)</label><input class="fld" id="bcReason" placeholder="Limited Time Offer">
+    <label class="lab">Message</label><textarea class="fld" id="bcMsg" placeholder="Aaj raat 8 baje mega tournament! Join karo."></textarea>
+    <div class="grid2">
+      <div><label class="lab">OK button text</label><input class="fld" id="bcOk" value="OK"></div>
+      <div><label class="lab">No Thanks text (blank=hide)</label><input class="fld" id="bcNo" value="No Thanks"></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn blue" onclick="sendBroad(true)">Activate Broadcast</button>
+      <button class="btn grey" onclick="sendBroad(false)">Turn Off</button>
+    </div></div>
+    <div class="card"><h3>🔔 Push Notification (to all)</h3>
+    <label class="lab">Title</label><input class="fld" id="pnTitle" placeholder="New tournament live!">
+    <label class="lab">Body</label><input class="fld" id="pnBody">
+    <button class="btn green" onclick="pushAll()" style="margin-top:10px">Send to All Users</button></div>`;
+}
+async function sendBroad(active){
+  await db.ref('settings/broadcast').set({
+    active,id:Date.now().toString(),icon:$('bcIcon').value,title:$('bcTitle').value,
+    reason:$('bcReason').value,msg:$('bcMsg').value,ok:$('bcOk').value,no:$('bcNo').value});
+  toast(active?'Broadcast active ✓':'Broadcast off');
+}
+async function pushAll(){
+  const title=$('pnTitle').value, body=$('pnBody').value;
+  if(!title)return toast('Title daalo');
+  const s=await db.ref('users').once('value');
+  let n=0; const ps=[];
+  s.forEach(c=>{ps.push(db.ref('notifications/'+c.key).push({title,body,at:Date.now(),read:false}));n++;});
+  await Promise.all(ps);
+  toast('Sent to '+n+' users ✓');
+}
+
+/* ========== SETTINGS ========== */
+function renderSettings(){
+  db.ref('settings').once('value').then(s=>{
+    const v=s.val()||{}; window._set=v;
+    $('p-settings').innerHTML=`
+      <div class="card"><h3>🎨 Branding</h3>
+        <label class="lab">App name</label><input class="fld" id="setName" value="${esc(v.appName||'CRAZY E-SPROTS')}">
+        <label class="lab">App logo</label>${imgInput('setLogo')}
+        <label class="lab">Welcome message</label><input class="fld" id="setWelcome" value="${esc(v.welcomeMsg||'Welcome to CRAZY E-SPROTS')}">
+      </div>
+      <div class="card"><h3>💵 Payments & Rebate</h3>
+        <div class="grid2">
+          <div><label class="lab">Min deposit (₹)</label><input class="fld" id="setMinDep" type="number" value="${v.minDeposit||10}"></div>
+          <div><label class="lab">UPI ID (receive)</label><input class="fld" id="setUpi" value="${esc(v.upiId||'')}"></div>
+        </div>
+        <div class="grid2">
+          <div><label class="lab">Min withdraw (₹)</label><input class="fld" id="setMinWd" type="number" value="${v.minWithdraw||50}"></div>
+          <div><label class="lab">Max withdraw (₹)</label><input class="fld" id="setMaxWd" type="number" value="${v.maxWithdraw||5000}"></div>
+        </div>
+        <label class="lab">UPI display name</label><input class="fld" id="setUpiName" value="${esc(v.upiName||'')}">
+        <p class="muted" style="margin-top:8px">Rebate rule: deposit ₹X → user ko X tournaments khelne padenge (auto-applied on approval).</p>
+      </div>
+      <div class="card"><h3>🛡️ Anti-Spam</h3>
+        <label class="lab">Max accounts per device</label><input class="fld" id="setMaxAcc" type="number" value="${v.maxAccountsPerDevice||3}">
+      </div>
+      <div class="card"><h3>📞 Support Links</h3>
+        <label class="lab">WhatsApp number (with country code, no +)</label><input class="fld" id="setWa" value="${esc(v.whatsapp||'')}">
+        <label class="lab">Telegram username (no @)</label><input class="fld" id="setTg" value="${esc(v.telegram||'')}">
+        <label class="lab">Instagram URL</label><input class="fld" id="setIg" value="${esc(v.instagram||'')}">
+      </div>
+      <div class="card"><h3>⚙️ More Config</h3>
+        <div class="grid2">
+          <div><label class="lab">Max deposit (₹)</label><input class="fld" id="setMaxDep" type="number" value="${v.maxDeposit||9999}"></div>
+          <div><label class="lab">Referral reward (coins)</label><input class="fld" id="setRefRwd" type="number" value="${v.referralReward||5}"></div>
+        </div>
+        <label class="lab">Payment gateway URL (optional — UroPay/TranzUPI link, blank = manual UTR)</label><input class="fld" id="setGw" value="${esc(v.gatewayUrl||'')}">
+        <label class="lab">Official site URL</label><input class="fld" id="setSite" value="${esc(v.officialSite||'')}">
+        <label class="lab">More apps URL</label><input class="fld" id="setMore" value="${esc(v.moreAppsUrl||'')}">
+        <label class="lab">Rate app URL</label><input class="fld" id="setRate" value="${esc(v.rateUrl||'')}">
+      </div>
+      <button class="btn green" onclick="saveSettings()">💾 Save All Settings</button>`;
+    bindImg('setLogo'); if(v.logoUrl)$('setLogo').value=v.logoUrl;
+  });
+}
+async function saveSettings(){
+  await db.ref('settings').update({
+    appName:$('setName').value,logoUrl:$('setLogo').value,welcomeMsg:$('setWelcome').value,
+    minDeposit:+$('setMinDep').value||10,upiId:$('setUpi').value,upiName:$('setUpiName').value,
+    minWithdraw:+$('setMinWd').value||50,maxWithdraw:+$('setMaxWd').value||5000,
+    maxAccountsPerDevice:+$('setMaxAcc').value||3,
+    maxDeposit:+$('setMaxDep').value||9999,referralReward:+$('setRefRwd').value||5,
+    gatewayUrl:$('setGw').value,officialSite:$('setSite').value,moreAppsUrl:$('setMore').value,rateUrl:$('setRate').value,
+    whatsapp:$('setWa').value,telegram:$('setTg').value,instagram:$('setIg').value
+  });
+  toast('Settings saved ✓');
+}
+
+/* ========== CONTENT (Game Rules, Info pages, Redeem) ========== */
+function renderContent(){
+  const v=window._set||{};
+  $('p-content').innerHTML=`
+    <div class="card"><h3>📋 Game Rules</h3>
+      <p class="muted" style="margin-bottom:10px">User app ke "Game Rules" page me ye cards dikhte hain.</p>
+      <div id="rulesList"></div>
+      <button class="btn blue" onclick="ruleForm()">+ Add Rule</button>
+    </div>
+    <div class="card"><h3>🛒 Redeem Items (Withdraw → REDEEM tab)</h3>
+      <div id="redeemList"></div>
+      <button class="btn blue" onclick="redeemForm()">+ Add Redeem Item</button>
+    </div>
+    <div class="card"><h3>📄 Info Pages</h3>
+      <label class="lab">FAQ</label><textarea class="fld" id="cFaq" rows="3">${esc(v.faq||'')}</textarea>
+      <label class="lab">About Us</label><textarea class="fld" id="cAbout" rows="3">${esc(v.aboutUs||'')}</textarea>
+      <label class="lab">Privacy Policy</label><textarea class="fld" id="cPriv" rows="3">${esc(v.privacyPolicy||'')}</textarea>
+      <label class="lab">Terms & Conditions</label><textarea class="fld" id="cTerms" rows="3">${esc(v.terms||'')}</textarea>
+      <button class="btn green" onclick="saveInfoPages()">💾 Save Info Pages</button>
+    </div>`;
+  // Game Rules list
+  db.ref('gameRules').on('value',s=>{const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
+    $('rulesList').innerHTML=list.length?list.map(r=>`<div class="item"><div class="h"><b>${esc(r.title)}</b><div class="row">
+      <button class="btn blue sm" onclick='ruleForm(${JSON.stringify(JSON.stringify({id:r.id,title:r.title,content:r.content}))})'>Edit</button>
+      <button class="btn red sm" onclick="delNode('gameRules/${r.id}','Rule')">Del</button></div></div>
+      <div class="meta">${esc((r.content||'').slice(0,120))}</div></div>`).join(''):'<p class="muted">No rules yet</p>';});
+  // Redeem list
+  db.ref('settings/redeemItems').on('value',s=>{const list=[];s.forEach(c=>list.push({id:c.key,...c.val()}));
+    $('redeemList').innerHTML=list.length?list.map(it=>`<div class="item"><div class="h"><b>${esc(it.name)} — ${it.coins} coins</b>
+      <button class="btn red sm" onclick="delNode('settings/redeemItems/${it.id}','Item')">Del</button></div></div>`).join(''):'<p class="muted">No items yet</p>';});
+}
+function ruleForm(json){
+  let r={};try{r=json?JSON.parse(json):{};}catch(e){}
+  modal(`<h2>${r.id?'Edit':'Add'} Game Rule</h2>
+    <label class="lab">Title</label><input class="fld" id="rTitle" value="${esc(r.title||'')}">
+    <label class="lab">Content (full rules text)</label><textarea class="fld" id="rContent" rows="8">${esc(r.content||'')}</textarea>
+    <div class="row" style="margin-top:12px"><button class="btn green" onclick="saveRule('${r.id||''}')">Save</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
+}
+async function saveRule(id){
+  const title=$('rTitle').value.trim(),content=$('rContent').value.trim();
+  if(!title)return toast('Title daalo');
+  const ref=id?db.ref('gameRules/'+id):db.ref('gameRules').push();
+  await ref.set({title,content,at:Date.now()});closeModal();toast('Rule saved ✓');
+}
+function redeemForm(){
+  modal(`<h2>Add Redeem Item</h2>
+    <label class="lab">Name (e.g. ₹50 Google Play)</label><input class="fld" id="riName" placeholder="Reward name">
+    <label class="lab">Coins required</label><input class="fld" id="riCoins" type="number" value="100">
+    <label class="lab">Image (optional)</label>${imgInput('riImg')}
+    <div class="row" style="margin-top:12px"><button class="btn green" onclick="saveRedeem()">Save</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
+  bindImg('riImg');
+}
+async function saveRedeem(){
+  const name=$('riName').value.trim(),coins=+$('riCoins').value||0,img=$('riImg').value;
+  if(!name||!coins)return toast('Name aur coins daalo');
+  await db.ref('settings/redeemItems').push({name,coins,img});closeModal();toast('Item added ✓');
+}
+async function saveInfoPages(){
+  await db.ref('settings').update({faq:$('cFaq').value,aboutUs:$('cAbout').value,privacyPolicy:$('cPriv').value,terms:$('cTerms').value});
+  window._set=Object.assign(window._set||{},{faq:$('cFaq').value,aboutUs:$('cAbout').value,privacyPolicy:$('cPriv').value,terms:$('cTerms').value});
+  toast('Info pages saved ✓');
+}
+
+/* ---------- util ---------- */
+function delNode(path,label){
+  modal(`<h2>Delete ${label}?</h2><p class="muted">Yeh action undo nahi hoga.</p>
+    <div class="row" style="margin-top:16px"><button class="btn red" onclick="db.ref('${path}').remove();closeModal();toast('Deleted')">Delete</button><button class="btn grey" onclick="closeModal()">Cancel</button></div>`);
+}
+db.ref('settings').once('value').then(s=>window._set=s.val()||{});
+</script>
+</body>
+</html>
