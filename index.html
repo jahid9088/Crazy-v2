@@ -595,10 +595,21 @@ function renderGifts(){
         <b style="letter-spacing:1px">${esc(g.code)}</b>
         <div class="meta">${g.amount} coins • ${used}/${g.maxClaims||'∞'} claimed • ${g.minDeposit?'Min deposit ₹'+g.minDeposit:'No deposit needed'} • <span class="pill ${g.active===false?'off':'on'}">${g.active===false?'OFF':'ON'}</span></div></div>
         <div class="toggle ${g.active===false?'':'on'}" onclick="db.ref('giftCodes/${g.code}/active').set(${g.active===false})"><i></i></div></div>
-        <div class="acts"><button class="btn red sm" onclick="delNode('giftCodes/${g.code}','Gift code')">Delete</button></div>
+        <div class="acts"><button class="btn blue sm" onclick="viewClaims('${g.code}')">View Claims (${used})</button><button class="btn red sm" onclick="delNode('giftCodes/${g.code}','Gift code')">Delete</button></div>
       </div>`;
     }).join('') || '<div class="empty">No gift codes</div>';
   });
+}
+async function viewClaims(code){
+  const g=(await db.ref('giftCodes/'+code).once('value')).val()||{};
+  const cb=g.claimedBy||{};const uids=Object.keys(cb);
+  if(!uids.length)return modal('<h2>Claims: '+esc(code)+'</h2><div class="empty">Abhi kisi ne claim nahi kiya</div><div class="row"><button class="btn grey" onclick="closeModal()">Close</button></div>');
+  let rows='';
+  for(const uid of uids){
+    const u=(await db.ref('users/'+uid).once('value')).val()||{};
+    rows+='<div class="item"><b>'+esc(u.name||uid)+'</b><div class="meta">'+esc(u.email||'')+' • '+esc(u.phone||'')+'<br>FF: '+esc(u.ffName||'-')+' ('+esc(u.ffUid||'-')+') • claimed: '+fmt(cb[uid])+'</div></div>';
+  }
+  modal('<h2>Claims: '+esc(code)+' ('+uids.length+')</h2><div style="max-height:60vh;overflow:auto">'+rows+'</div><div class="row" style="margin-top:12px"><button class="btn grey" onclick="closeModal()">Close</button></div>');
 }
 function giftForm(){
   modal(`<h2>Create Gift Code</h2>
@@ -694,11 +705,12 @@ function filterUsers(){
   const q=($('uSearch').value||'').toLowerCase();
   const list=(window._users||[]).filter(u=>!q||(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)||(u.phone||'').includes(q));
   $('userList').innerHTML=list.map(u=>`
-    <div class="item"><div class="h"><div>
-      <b>${esc(u.name)} ${u.banned?'<span class="pill off">BANNED</span>':''}</b>
-      <div class="meta">${esc(u.email)} • ${esc(u.phone||'')}<br>FF: ${esc(u.ffName||'-')} (${esc(u.ffUid||'-')})<br>Play:${(u.playCoin||0).toFixed(0)} Win:${(u.winnings||0).toFixed(0)} Ref:${(u.referralReward||0).toFixed(0)} Bonus:${(u.bonusReward||0).toFixed(0)} • Played:${u.tournamentsPlayed||0}/${u.rebateRequired||0}<br>IP: ${esc(u.ip||'-')} • ${esc(u.model||'-')}</div></div></div>
+    <div class="item"><div class="h"><div style="display:flex;gap:12px;align-items:flex-start">
+      ${u.photoUrl?`<img src="${u.photoUrl}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0">`:`<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ff7a18,#22c55e);flex-shrink:0"></div>`}
+      <div><b>${esc(u.name)} ${u.banned?'<span class="pill off">BANNED</span>':''} <span class="pill ${u.provider==='google'?'on':''}">${(u.provider||'email').toUpperCase()}</span></b>
+      <div class="meta">${esc(u.email)} • ${esc(u.phone||'')}<br>FF: ${esc(u.ffName||'-')} (${esc(u.ffUid||'-')}) • Code: ${esc(u.referralCode||'-')}<br>Play:${(u.playCoin||0).toFixed(0)} Win:${(u.winnings||0).toFixed(0)} Ref:${(u.referralReward||0).toFixed(0)} Bonus:${(u.bonusReward||0).toFixed(0)} • Played:${u.tournamentsPlayed||0}/${u.rebateRequired||0}<br>${u.provider==='google'?'GoogleID: '+esc(u.googleId||'-')+'<br>':''}IP: ${esc(u.ip||'-')} • ${esc(u.model||'-')} • Joined: ${u.createdAt?fmt(u.createdAt):'-'}</div></div></div></div>
     <div class="acts">
-      <button class="btn blue sm" onclick="adjustBal('${u.uid}',${u.balance||0})">Adjust Balance</button>
+      <button class="btn blue sm" onclick="adjustBal('${u.uid}',0)">Adjust Balance</button>
       <button class="btn ${u.banned?'green':'red'} sm" onclick="banUser('${u.uid}',${!!u.banned})">${u.banned?'Unban':'Ban'}</button>
     </div></div>`).join('') || '<div class="empty">No users</div>';
 }
@@ -829,6 +841,13 @@ function renderSettings(){
         <label class="lab">Official site URL</label><input class="fld" id="setSite" value="${esc(v.officialSite||'')}">
         <label class="lab">More apps URL</label><input class="fld" id="setMore" value="${esc(v.moreAppsUrl||'')}">
         <label class="lab">Rate app URL</label><input class="fld" id="setRate" value="${esc(v.rateUrl||'')}">
+        <label class="lab">APK download link (share me jayega)</label><input class="fld" id="setApk" value="${esc(v.apkUrl||'https://github.com/jahid9088/Apksss/releases/download/V2/base.252.apk')}">
+      </div>
+      <div class="card"><h3>💸 Withdrawal Methods (ON/OFF)</h3>
+        <p class="muted" style="margin-bottom:10px">Band karne par user ko message dikhega ki dusra method use kare.</p>
+        <div class="item"><div class="h"><b>UPI Withdrawal</b><div class="toggle ${v.wdUpiOn===false?'':'on'}" onclick="toggleWd('wdUpiOn',${v.wdUpiOn!==false})"><i></i></div></div></div>
+        <div class="item"><div class="h"><b>Bank Withdrawal</b><div class="toggle ${v.wdBankOn===false?'':'on'}" onclick="toggleWd('wdBankOn',${v.wdBankOn!==false})"><i></i></div></div></div>
+        <div class="item"><div class="h"><b>Redeem Store</b><div class="toggle ${v.wdRedeemOn===false?'':'on'}" onclick="toggleWd('wdRedeemOn',${v.wdRedeemOn!==false})"><i></i></div></div></div>
       </div>
       <button class="btn green" onclick="saveSettings()">💾 Save All Settings</button>`;
     bindImg('setLogo'); if(v.logoUrl)$('setLogo').value=v.logoUrl;
@@ -847,10 +866,12 @@ async function saveSettings(){
     maxAccountsPerDevice:+$('setMaxAcc').value||3,
     maxDeposit:+$('setMaxDep').value||9999,referralReward:+$('setRefRwd').value||5,
     gatewayUrl:$('setGw').value,officialSite:$('setSite').value,moreAppsUrl:$('setMore').value,rateUrl:$('setRate').value,
+    apkUrl:$('setApk').value,
     whatsapp:$('setWa').value,telegram:$('setTg').value,instagram:$('setIg').value
   });
   toast('Settings saved ✓');
 }
+function toggleWd(key,cur){db.ref('settings/'+key).set(!cur);toast(key+': '+(!cur?'ON':'OFF'));setTimeout(renderSettings,300);}
 
 /* ========== CONTENT (Game Rules, Info pages, Redeem) ========== */
 function renderContent(){
